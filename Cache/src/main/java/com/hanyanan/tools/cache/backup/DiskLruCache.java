@@ -5,7 +5,6 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -14,7 +13,7 @@ import java.util.WeakHashMap;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
-public class DiskLruCache implements ICache{
+public class DiskLruCache {
 	private static final String TAG = DiskLruCache.class.getSimpleName();
 	/** Size of this cache in units. Not necessarily the number of elements. */
     private long mCurrSize = 0;
@@ -29,7 +28,7 @@ public class DiskLruCache implements ICache{
     /** ������, waiting for delete, it may be translate to active area. */
     private final transient Map<Object, String> mDeathingCachedMap = new LinkedHashMap<Object, String>();
     /** �ǻ�Ծ��,waiting for cached to disk. */
-    private final transient Map<Object, ICacheable> mActivingCachedMap = new LinkedHashMap<Object, ICacheable>();
+    private final transient Map<Object, IDiskCacheable> mActivingCachedMap = new LinkedHashMap<Object, IDiskCacheable>();
     
     private final transient WeakHashMap<Object, Long> mCachableSizeMap = new WeakHashMap<Object, Long>();
         
@@ -72,8 +71,8 @@ public class DiskLruCache implements ICache{
 	}
 
 	@Override
-	public ICacheable get(Object key) {
-		ICacheable c = null;
+	public IDiskCacheable get(Object key) {
+		IDiskCacheable c = null;
 		String path = null;
 		mLock.lock();
 		if(mActivingCachedMap.containsKey(key)){
@@ -92,8 +91,8 @@ public class DiskLruCache implements ICache{
 	}
 
 	@Override
-	public ICacheable put(Object key, ICacheable value) {
-		ICacheable res = null;
+	public IDiskCacheable put(Object key, IDiskCacheable value) {
+		IDiskCacheable res = null;
 		mCachableSizeMap.put(key, Long.valueOf(value.sizeOf()));
 		mLock.lock();
 		res = remove(key);
@@ -106,8 +105,8 @@ public class DiskLruCache implements ICache{
 	}
 
 	@Override
-	public ICacheable remove(Object key) {
-		ICacheable c = null;
+	public IDiskCacheable remove(Object key) {
+		IDiskCacheable c = null;
 		mLock.lock();
 		if(mActivingCachedMap.containsKey(key)){
 			c = mActivingCachedMap.remove(key);
@@ -165,7 +164,7 @@ public class DiskLruCache implements ICache{
     	 }
 	}
 	
-	private void putToActive(Map.Entry<Object, ICacheable> entry, String path){
+	private void putToActive(Map.Entry<Object, IDiskCacheable> entry, String path){
 		try {
 			mLock.lockInterruptibly();
 			mCurrSize += entry.getValue().sizeOf();
@@ -250,11 +249,11 @@ public class DiskLruCache implements ICache{
 		return null;
 	}
 
-	private Map.Entry<Object, ICacheable> pullActivingOne(){
-		Map<Object, ICacheable> content = mActivingCachedMap;
-		Set<Map.Entry<Object, ICacheable>> entrySet = content.entrySet();
+	private Map.Entry<Object, IDiskCacheable> pullActivingOne(){
+		Map<Object, IDiskCacheable> content = mActivingCachedMap;
+		Set<Map.Entry<Object, IDiskCacheable>> entrySet = content.entrySet();
 		if(null == entrySet) return null;
-		Iterator<Map.Entry<Object, ICacheable>> iterators = content.entrySet().iterator();
+		Iterator<Map.Entry<Object, IDiskCacheable>> iterators = content.entrySet().iterator();
 		if(null == iterators) return null;
 		if(iterators.hasNext()){
 			return iterators.next();
@@ -266,7 +265,7 @@ public class DiskLruCache implements ICache{
 	private Runnable mActivingRunnable = new Runnable(){
 		public void run(){
 			while(!isDisposed){
-				Map.Entry<Object, ICacheable> entry = null;
+				Map.Entry<Object, IDiskCacheable> entry = null;
 				try {
 					mLock.lockInterruptibly();
 					int size = mActivingCachedMap.size();

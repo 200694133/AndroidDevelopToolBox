@@ -17,7 +17,7 @@ public class MultipleLayerLruCache implements ICache{
 			super(maxSize);
 		}
 		
-	    protected void onEntryRemove(Object key, ICacheable data){
+	    protected void onEntryRemove(Object key, IDiskCacheable data){
 	    	if(null != mDiskLruCache){
 	    		mDiskLruCache.put(key, data);
 	    	}
@@ -27,8 +27,8 @@ public class MultipleLayerLruCache implements ICache{
 
 
 	@Override
-	public ICacheable get(Object key) {
-		ICacheable c = null;
+	public IDiskCacheable get(Object key) {
+		IDiskCacheable c = null;
 		if(null != mMemLruCache){
 			c = mMemLruCache.get(key);
 		}
@@ -46,8 +46,8 @@ public class MultipleLayerLruCache implements ICache{
 
 
 	@Override
-	public ICacheable put(Object key, ICacheable value) {
-		ICacheable c = null;
+	public IDiskCacheable put(Object key, IDiskCacheable value) {
+		IDiskCacheable c = null;
 		if(null != mMemLruCache){
 			c = mMemLruCache.put(key, value);
 		}
@@ -57,8 +57,8 @@ public class MultipleLayerLruCache implements ICache{
 
 
 	@Override
-	public ICacheable remove(Object key) {
-		ICacheable c = null;
+	public IDiskCacheable remove(Object key) {
+		IDiskCacheable c = null;
 		if(null != mMemLruCache){
 			c = mMemLruCache.remove(key);
 		}
