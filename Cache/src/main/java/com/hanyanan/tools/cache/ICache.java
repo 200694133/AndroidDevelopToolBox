@@ -8,11 +8,11 @@ public interface ICache {
     /** get current cache type */
     public CacheType getType();
 
-	public IDiskCacheable get(String key);
+	public ICacheable get(String key);
 	
-	public IDiskCacheable put(String key, ICacheable value);
+	public ICacheable put(String key, ICacheable value);
 	
-	public IDiskCacheable remove(String key);
+	public ICacheable pull(String key);
 
     public void clear();
 
@@ -22,9 +22,7 @@ public interface ICache {
 
     public interface ICacheTypeListener{
 
-        public void onRemovedForever(String key);
-
-        public void onCacheTypeChanged(String key, CacheType prevType, CacheType newType);
+        public void onRemoved(String key);
     }
 }
 
