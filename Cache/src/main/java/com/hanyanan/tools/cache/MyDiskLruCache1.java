@@ -192,8 +192,9 @@ public class MyDiskLruCache1 implements ICache {
         }
     }
 
-    private synchronized void processEntry(Entry entry){
-        switch(entry.mAction){
+    private synchronized void processEntry(Editor editor){
+        Entry newEntry = editor.mNewEntry;
+        switch(newEntry.mAction){
             case PUT_ACTION:
                 recordJournal(entry.toString());
                 break;
