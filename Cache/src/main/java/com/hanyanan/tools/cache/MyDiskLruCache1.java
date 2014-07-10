@@ -2,38 +2,38 @@ package com.hanyanan.tools.cache;
 
 import android.os.Handler;
 import android.os.HandlerThread;
-import android.os.Looper;
 import android.os.Message;
 import android.text.TextUtils;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FilterOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.Writer;
 import java.util.LinkedHashMap;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
+import java.util.WeakHashMap;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
  * Created by hanyanan on 2014/7/9.
  */
-public class MyDiskLruCache1 implements ICache {
+public class MyDiskLruCache1 {
     private static final String JOURNAL_FILE = "journal";
     private static final String JOURNAL_FILE_TMP = "journal.tmp";
     private static final String MAGIC = "libcore.io.DiskLruCache";
     private static final String VERSION_1 = "1";
     private static final String SPLIT = " ";
+
     private enum Action{
         PUT_ACTION("PUT"),
         REMOVE_ACTION("REMOVE"),
-        COMPLETE_ACTION("COMPLETE"),
-        ABORT_ACTION("ABORT");
+        READ_ACTION("READ");
         private String mAction;
         private Action(String action){
             mAction = action;
@@ -43,57 +43,19 @@ public class MyDiskLruCache1 implements ICache {
         }
     }
 
-    private enum Position{
-        DISK("DISK"),
-        BLOCK_QUEUE("BlockQueue");
-        private String mAction;
-        private Position(String action){
-            mAction = action;
+    private enum STATUS{
+        SYNCED("IN DISK OR FAILED REMOVE FROM APP"),
+        NEED_SYNC("DIRTY"),
+        SYNCING("WRIT TO DISK");
+        private String mStatus;
+        private STATUS(String action){
+            mStatus = action;
         }
-        private String getAction(){
-            return mAction;
+        private String getStatus(){
+            return mStatus;
         }
     }
 
-     /*
-     * This cache uses a journal file named "journal". A typical journal file
-     * looks like this:
-     *     libcore.io.DiskLruCache
-     *     1
-     *     100
-     *     2
-     *
-     *     CLEAN 3400330d1dfc7f3f7f4b8d4d803dfcf6 832 21054
-     *     DIRTY 335c4c6028171cfddfbaae1a9c313c52
-     *     CLEAN 335c4c6028171cfddfbaae1a9c313c52 3934 2342
-     *     REMOVE 335c4c6028171cfddfbaae1a9c313c52
-     *     DIRTY 1ab96a171faeeee38496d8b330771a7a
-     *     CLEAN 1ab96a171faeeee38496d8b330771a7a 1600 234
-     *     READ 335c4c6028171cfddfbaae1a9c313c52
-     *     READ 3400330d1dfc7f3f7f4b8d4d803dfcf6
-     *
-     * The first five lines of the journal form its header. They are the
-     * constant string "libcore.io.DiskLruCache", the disk cache's version,
-     * the application's version, the value count, and a blank line.
-     *
-     * Each of the subsequent lines in the file is a record of the state of a
-     * cache entry. Each line contains space-separated values: a state, a key,
-     * and optional state-specific values.
-     *   o DIRTY lines track that an entry is actively being created or updated.
-     *     Every successful DIRTY action should be followed by a CLEAN or REMOVE
-     *     action. DIRTY lines without a matching CLEAN or REMOVE indicate that
-     *     temporary files may need to be deleted.
-     *   o CLEAN lines track a cache entry that has been successfully published
-     *     and may be read. A publish line is followed by the lengths of each of
-     *     its values.
-     *   o READ lines track accesses for LRU.
-     *   o REMOVE lines track entries that have been deleted.
-     *
-     * The journal file is appended to as cache operations occur. The journal may
-     * occasionally be compacted by dropping redundant lines. A temporary file named
-     * "journal.tmp" will be used during compaction; that file should be deleted if
-     * it exists when the cache is opened.
-     */
      private final File directory;
      private final File journalFile;
      private final File journalFileTmp;
@@ -102,18 +64,18 @@ public class MyDiskLruCache1 implements ICache {
      private final int valueCount;
      private long size = 0;
     private Writer journalWriter;
-    private ICacheTypeListener mCacheListener = null;
     private final transient LinkedHashMap<String, Entry> lruEntries  = new LinkedHashMap<String, Entry>(0, 0.75f, true);
     private int redundantOpCount;
     private static final HandlerThread sHandlerThread = new android.os.HandlerThread("DiskLruCache");
     static {
         sHandlerThread.start();
     }
+    private final ReentrantLock mLock = new ReentrantLock(false);
     private final Handler.Callback mWorkCallback = new Handler.Callback(){
         public boolean handleMessage(Message message) {
             if(null == message || message.obj == null) return false;
             Editor editor = (Editor)message.obj;
-            processEntry(editor);
+            doPutAction(editor);
             return true;
         }
     };
@@ -162,29 +124,22 @@ public class MyDiskLruCache1 implements ICache {
         if (journalLine == null || !journalLine.isIllegal()) {
             return ;
         }
+        String key = journalLine.getKey();
         if(journalLine.getAction() == Action.REMOVE_ACTION){
-            lruEntries.remove(journalLine.getKey());
+            lruEntries.remove(key);
             return ;
         }
-        if(journalLine.getAction() == Action.DIRTY_ACTION){
-            lruEntries.remove(journalLine.getKey());
+        if(journalLine.getAction() == Action.PUT_ACTION){
+            lruEntries.put(key,new Entry(key, journalLine.mSize, journalLine.mActionTime));
             return ;
         }
-        if (secondSpace != -1 && firstSpace == CLEAN.length() && line.startsWith(CLEAN)) {
-            String[] parts = line.substring(secondSpace + 1).split(" ");
-            entry.readable = true;
-            entry.currentEditor = null;
-            entry.setLengths(parts);
-        } else if (secondSpace == -1 && firstSpace == DIRTY.length() && line.startsWith(DIRTY)) {
-            entry.currentEditor = new Editor(entry);
-        } else if (secondSpace == -1 && firstSpace == READ.length() && line.startsWith(READ)) {
-            // this work was already done by calling lruEntries.get()
-        } else {
-            throw new IOException("unexpected journal line: " + line);
+        if(journalLine.getAction() == Action.READ_ACTION){
+            //do nothing
+            return ;
         }
     }
 
-    private synchronized void recordJournal(String line){
+    private synchronized void writeJournal(String line){
         try {
             journalWriter.write(line);
         } catch (IOException e) {
@@ -192,84 +147,174 @@ public class MyDiskLruCache1 implements ICache {
         }
     }
 
-    private synchronized void processEntry(Editor editor){
-        Entry newEntry = editor.mNewEntry;
-        switch(newEntry.mAction){
-            case PUT_ACTION:
-                recordJournal(entry.toString());
-                break;
-            case ABORT_ACTION:
-
-                break;
-            case REMOVE_ACTION:
-
-                break;
-            case COMPLETE_ACTION:
-
-                break;
+    private static String parseJournal(Action action,Entry entry,long t) {
+        String res = action.getAction() + " " + entry.mKey;
+        if (action == Action.PUT_ACTION) {
+            res = res + " " + entry.mCleanExpireTime + " " + entry.mCleanSize;
         }
+        return res + " " + t;
     }
-    private synchronized void submitEdit(final Editor editor, final boolean abort) throws IOException {
-        if(abort){
-                Runnable mAbortRunnable = new Runnable(){
-                    public void run(){
 
-                    }
-                };
-            mExecutorService.submit(mAbortRunnable);
+    private void doPutAction(Editor editor){
+        long t = System.currentTimeMillis();
+        Entry entry = editor.mEntry;
+        mLock.lock();
+        entry.mStatus = STATUS.SYNCING;
+        mLock.unlock();
+        File dirtyFile = new File(directory, entry.mKey);
+        if(null == dirtyFile || !dirtyFile.exists()){
+            lruEntries.remove(editor.getKey());
+            System.out.println("Cannot find file "+editor.getKey());
+            return;
+        }
+        dirtyFile.renameTo(new File(directory, entry.mKey+".tmp"));
+        File cleanFile = new File(directory, entry.mKey);
+        boolean ref = write(cleanFile, entry.mData);
+        if(!ref){//failed
+            lruEntries.remove(editor.getKey());
+            writeJournal(parseJournal(Action.REMOVE_ACTION, entry,t));
         }else{
-            Runnable mWriteRunnable = new Runnable(){
-                public void run(){
+            writeJournal(parseJournal(Action.PUT_ACTION, entry,t));
+        }
+        try {
+            if(!ref){
+                deleteIfExists(cleanFile);
+            }
+            deleteIfExists(dirtyFile);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        mLock.lock();
+        entry.mStatus = STATUS.SYNCED;
+        mLock.unlock();
+    }
 
+    private void doRemoveAction(Editor editor){
+        long t = System.currentTimeMillis();
+        Entry entry = editor.mEntry;
+        mLock.lock();
+        entry.mStatus = STATUS.SYNCING;
+        mLock.unlock();
+        lruEntries.remove(editor.getKey());
+        try {
+            deleteIfExists(new File(directory, entry.mKey));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        writeJournal(parseJournal(Action.REMOVE_ACTION, entry,t));
+        mLock.lock();
+        entry.mStatus = STATUS.SYNCED;
+        mLock.unlock();
+    }
+
+
+    public byte[] get(String key) {
+        long time = System.currentTimeMillis();
+        mLock.lock();
+        Entry entry = lruEntries.get(key);
+        if(null == entry){
+            mLock.unlock();
+            return null;
+        }
+        if(entry.mStatus == STATUS.NEED_SYNC
+                || entry.mStatus == STATUS.SYNCING) {
+            mLock.unlock();
+            return entry.mData;
+        }
+        byte[] data = read(entry.getFreshFile());
+        mLock.unlock();
+        writeJournal(parseJournal(Action.READ_ACTION, entry,time));
+        return data;
+    }
+
+    public void put(String key, IDiskCacheable value, long exTime) {
+        byte[] data  = value.toBytes();
+        mLock.lock();
+        Entry entry = lruEntries.get(key);
+        if(null == entry){
+            entry = new Entry(key, data.length, exTime);
+        }
+        entry.update(data.length, exTime, data);
+        Editor editor = new Editor(entry);
+        editor.mAction = Action.PUT_ACTION;
+        mWorkHandler.removeMessages(key.hashCode());
+        Message msg = Message.obtain(mWorkHandler, key.hashCode(),editor);
+        mWorkHandler.sendMessage(msg);
+        mLock.unlock();
+    }
+
+    public void remove(String key){
+        mLock.lock();
+        mWorkHandler.removeMessages(key.hashCode());
+        Entry entry = lruEntries.get(key);
+        if(null != entry){
+            entry.remove();
+            Editor editor = new Editor(entry);
+            editor.mAction = Action.REMOVE_ACTION;
+            mWorkHandler.removeMessages(key.hashCode());
+            Message msg = Message.obtain(mWorkHandler, key.hashCode(),editor);
+            mWorkHandler.sendMessage(msg);
+        }
+        mLock.unlock();
+    }
+
+    public void clear() {
+
+    }
+
+    /**
+     * @param file
+     * @param content
+     * @return true success,
+     *              false failed
+     */
+    private boolean write(File file, byte[] content){
+        if(!file.exists()){
+            System.out.println(file.getAbsolutePath() + " is not exists, create new one");
+            try {
+                boolean res = file.createNewFile();
+                if(!res){
+                    System.out.println("Create "+file.getAbsolutePath()+" failed!");
+                    return false;
                 }
-            };
-            mExecutorService.submit(mWriteRunnable);
+
+            } catch (IOException e) {
+                e.printStackTrace();
+                return false;
+            }
         }
 
-        // if this edit is creating the entry for the first time, every index must have a value
-        if (success && !entry.readable) {
-            for (int i = 0; i < valueCount; i++) {
-                if (!editor.written[i]) {
-                    editor.abort();
-                    throw new IllegalStateException("Newly created entry didn't create value for index " + i);
-                }
-                if (!entry.getDirtyFile(i).exists()) {
-                    editor.abort();
-                    System.out.println("DiskLruCache: Newly created entry doesn't have file for index " + i);
-                    return;
-                }
-            }
+        try {
+            FileOutputStream fw = new FileOutputStream(file, false);
+            fw.write(content);
+            fw.flush();
+            fw.close();
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+            return false;
+        } catch (IOException e) {
+            e.printStackTrace();
+            return false;
         }
-        for (int i = 0; i < valueCount; i++) {
-            File dirty = entry.getDirtyFile(i);
-            if (success) {
-                if (dirty.exists()) {
-                    File clean = entry.getCleanFile(i);
-                    dirty.renameTo(clean);
-                    long oldLength = entry.lengths[i];
-                    long newLength = clean.length();
-                    entry.lengths[i] = newLength;
-                    size = size - oldLength + newLength;
-                }
-            } else {
-                deleteIfExists(dirty);
-            }
+        return true;
+    }
+
+    private byte[] read(File file){
+        if(!file.exists()){
+            System.out.println(file.getAbsolutePath() + " is not exists, create new one");
+            return null;
         }
-        redundantOpCount++;
-        entry.currentEditor = null;
-        if (entry.readable | success) {
-            entry.readable = true;
-            journalWriter.write(CLEAN + ' ' + entry.key + entry.getLengths() + '\n');
-            if (success) {
-                entry.sequenceNumber = nextSequenceNumber++;
-            }
-        } else {
-            lruEntries.remove(entry.key);
-            journalWriter.write(REMOVE + ' ' + entry.key + '\n');
+        byte[] data = new byte[(int)file.length()];
+        try {
+            FileInputStream fw = new FileInputStream(file);
+            fw.read(data,0,data.length);
+            fw.close();
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
         }
-        if (size > maxSize || journalRebuildRequired()) {
-            executorService.submit(cleanupCallable);
-        }
+        return data;
     }
 
     private void trimToSize(){
@@ -284,44 +329,6 @@ public class MyDiskLruCache1 implements ICache {
 
     public void close(){
         mWorkHandler.removeCallbacksAndMessages(null);
-    }
-
-
-
-
-    @Override
-    public CacheType getType() {
-        return CacheType.DISK;
-    }
-
-    @Override
-    public ICacheable get(String key) {
-        return null;
-    }
-
-    @Override
-    public ICacheable put(String key, ICacheable value) {
-        return null;
-    }
-
-    @Override
-    public ICacheable pull(String key) {
-        return null;
-    }
-
-    @Override
-    public void clear() {
-
-    }
-
-    @Override
-    public void reSize(long newMaxSize) {
-
-    }
-
-    @Override
-    public void addCacheTypeListener(ICacheTypeListener listener) {
-
     }
 
     private static class JournalLine{
@@ -345,29 +352,27 @@ public class MyDiskLruCache1 implements ICache {
                 return;
             }
             String action = strings[0];
-            if(action.equalsIgnoreCase(Action.REMOVE_ACTION.getAction())){
-                mAction = Action.REMOVE_ACTION;
-            }else if(action.equalsIgnoreCase(Action.PUT_ACTION.getAction())){
-                mAction = Action.PUT_ACTION;
-            }else if(action.equalsIgnoreCase(Action.COMPLETE_ACTION.getAction())){
-                mAction = Action.COMPLETE_ACTION;
-            }else if(action.equalsIgnoreCase(Action.ABORT_ACTION.getAction())){
-                mAction = Action.ABORT_ACTION;
-            }
             mKey = strings[1];
             try {
-                mActionTime = Long.parseLong(strings[2]);
-                mExpireTime = Long.parseLong(strings[3]);
-                mSize = Long.parseLong(strings[4]);
+                if(action.equalsIgnoreCase(Action.REMOVE_ACTION.getAction())){
+                    mAction = Action.REMOVE_ACTION;
+                    mActionTime = Long.parseLong(strings[2]);
+                }else if(action.equalsIgnoreCase(Action.PUT_ACTION.getAction())){
+                    mAction = Action.PUT_ACTION;
+                    mExpireTime = Long.parseLong(strings[2]);
+                    mSize = Long.parseLong(strings[3]);
+                    mActionTime = Long.parseLong(strings[4]);
+                }else if(action.equalsIgnoreCase(Action.REMOVE_ACTION.getAction())){
+                    mAction = Action.REMOVE_ACTION;
+                    mActionTime = Long.parseLong(strings[2]);
+                }
+                isIllegal = true;
             }catch(Exception e){
                 e.printStackTrace();
             }
         }
         public String getKey(){
             return mKey;
-        }
-        public String toString(){
-            return null;
         }
         private Action getAction(){
             return mAction;
@@ -377,33 +382,28 @@ public class MyDiskLruCache1 implements ICache {
         }
     }
     public final class Editor {
-        private Entry mCurrEntry;
-        private Entry mNewEntry;
+        private Entry mEntry;
+        private Action mAction;
         private boolean abort = false;
         private boolean hasErrors = false;
         private Editor(Entry entry) {
             if(null == entry) throw new IllegalArgumentException("");
-            mCurrEntry = entry;
+            mEntry = entry;
         }
-
-        public void setNewValue(long size, long exTime, byte[] data){
-            mNewEntry = new Entry(Action.PUT_ACTION, mCurrEntry.mKey, size, exTime);
-            mNewEntry.mData = data;
+        private String getKey(){
+            return mEntry.mKey;
         }
-        /**
-         * Commits this edit so it is visible to readers.  This releases the
-         * edit lock so another edit may be started on the same key.
-         */
-        public void commit() throws IOException {
-            if(abort){
-                return ;
-            }
-            if (hasErrors) {
-                completeEdit(this, false);
-                remove(entry.key); // the previous entry is stale
-            } else {
-                completeEdit(this, true);
-            }
+        private File getFile() {
+            return new File(getKey() + ".tmp");
+        }
+        public void put(long size, long exTime, byte[] data){
+            mEntry.mData = data;
+            mEntry.mDirtySize = size;
+            mEntry.mDirtyExpireTime = exTime;
+            mAction = Action.PUT_ACTION;
+        }
+        public void remove(){
+            mAction = Action.REMOVE_ACTION;
         }
 
         /**
@@ -413,8 +413,6 @@ public class MyDiskLruCache1 implements ICache {
         public void abort() throws IOException {
             abort = true;
         }
-
-
 
         private class FaultHidingOutputStream extends FilterOutputStream {
             private FaultHidingOutputStream(OutputStream out) {
@@ -451,25 +449,46 @@ public class MyDiskLruCache1 implements ICache {
         }
     }
     private final class Entry{
-        Action mAction;
-        String mKey;
-        long mSize;
-        long mExpireTime;
-        byte[] mData = null;
-        private Entry(Action action, String key, long size, long expireTime){
-            mAction = action;
+        private String mKey;
+        private long mDirtySize;
+        private long mDirtyExpireTime;
+        private byte[] mData;
+        private STATUS mStatus = STATUS.SYNCED;
+        private long mCleanSize;
+        private long mCleanExpireTime;
+        public File getFreshFile(){
+            return new File(directory, mKey);
+        }
+        private Entry(String key, long size, long expireTime){
             mKey = key;
-            mSize = size;
-            mExpireTime = expireTime;
+            mCleanSize = size;
+            mCleanExpireTime = expireTime;
+        }
+        public void update(long size, long expireTime, byte[] data){
+            mStatus = STATUS.NEED_SYNC;
+            mDirtySize = mCleanSize;
+            mDirtyExpireTime = mCleanExpireTime;
+            mCleanSize = size;
+            mData = data;
+            mCleanExpireTime = expireTime;
+        }
+
+        public void remove(){
+            mDirtySize = mCleanSize;
+            mDirtyExpireTime = mCleanExpireTime;
+            mCleanSize = 0;
+            mCleanExpireTime = 0;
+            mStatus = STATUS.NEED_SYNC;
         }
         public String toString(){
-            return mAction.getAction()+" "+mKey+" "+System.currentTimeMillis()+" "+mExpireTime+" "+mSize;
+            if(mStatus == STATUS.SYNCED){
+                return mKey+" "+System.currentTimeMillis()+" "+mCleanExpireTime+" "+mCleanSize;
+            }else{
+                return mKey+" "+System.currentTimeMillis()+" "+mDirtyExpireTime+" "+mDirtySize;
+            }
         }
         public int hashCode(){
             return mKey.hashCode();
-        }
-        public byte[] getData(){
-            return mData;
         }
         @Override
         public boolean equals(Object obj){
@@ -479,12 +498,6 @@ public class MyDiskLruCache1 implements ICache {
                 return e.mKey.equals(e.mKey);
             }
             return false;
-        }
-        public long getSize(){
-            return mSize;
-        }
-        public File getFile() {
-            return new File(directory, mKey);
         }
     }
 }

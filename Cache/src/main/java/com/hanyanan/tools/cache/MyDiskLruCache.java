@@ -330,6 +330,7 @@ public final class MyDiskLruCache implements Closeable {
         journalFileTmp.renameTo(journalFile);
         journalWriter = new BufferedWriter(new FileWriter(journalFile, true));
     }
+
     private static void deleteIfExists(File file) throws IOException {
         if (file.exists() && !file.delete()) {
             throw new IOException("delete failed");
