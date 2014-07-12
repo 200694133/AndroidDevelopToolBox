@@ -4,9 +4,9 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 
-public class MemLruCache implements ICache {
+public class MemLruCache {
 	private static final String TAG = MemLruCache.class.getSimpleName();
-	private transient LinkedHashMap<Object, IDiskCacheable> mCacheMap = null;
+	private transient LinkedHashMap<String, IMemCacheable> mCacheMap = new LinkedHashMap<String, IMemCacheable>(0, 0.75f, true);
 	/** Size of this cache in units. Not necessarily the number of elements. */
     private long mCurrSize = -1;
     private long mMaxSize = -1;
@@ -15,24 +15,26 @@ public class MemLruCache implements ICache {
     private int mEvictionCount;
     private int mHitCount;
     private int mMissCount;
+    private ICache.ICacheTypeListener mCacheListener = null;
 	
     /**
      * @param maxSize for caches in memory, this is the maximum sum of the sizes of the entries in this cache.
      */
-    public MemLruCache(int maxSize) {
+    public MemLruCache(long maxSize) {
         if (maxSize <= 0) {
             throw new IllegalArgumentException("maxSize <= 0");
         }
         mMaxSize = maxSize;
-        mCacheMap = new LinkedHashMap<Object, IDiskCacheable>(0, 0.75f, true);
     }
     
     public String toString(){
     	return new String("Put Count: "+mPutCount+" ,  Eviction Count"+mEvictionCount+" ,  Hit Count "+mHitCount+" ,  Miss Count"+mMissCount);
     }
     
-    protected void onEntryRemove(Object key, IDiskCacheable data){
-    	
+    protected void onEntryRemove(String key, IMemCacheable data){
+    	if(null != mCacheListener){
+            mCacheListener.onRemoved(key);
+        }
     }
     
     /**
@@ -45,8 +47,8 @@ public class MemLruCache implements ICache {
      */
     public void trimToSize(long maxSize) {
     	while (true) {
-    		Object key = null;
-    		IDiskCacheable value = null;
+            String key = null;
+            IMemCacheable value = null;
     		synchronized (this) {
     			if (mCurrSize < 0 || (mCacheMap.isEmpty() && mCurrSize != 0)) {
                     throw new IllegalStateException(getClass().getName() + ".sizeOf() is reporting inconsistent results!");
@@ -56,7 +58,7 @@ public class MemLruCache implements ICache {
                     break;
                 }
                 
-                Map.Entry<Object, IDiskCacheable> toEvict = mCacheMap.entrySet().iterator().next();
+                Map.Entry<String, IMemCacheable> toEvict = mCacheMap.entrySet().iterator().next();
                 if (toEvict == null) {
                     break;
                 }
@@ -71,21 +73,20 @@ public class MemLruCache implements ICache {
     	}
     }
     
-    private long safeSizeOf(Object key, IDiskCacheable value) {
+    private long safeSizeOf(String key, IMemCacheable value) {
         long result = value.sizeOf();
         if (result < 0) {
             throw new IllegalStateException("Negative size: " + key + "=" + value);
         }
         return result;
     }
-    
-	@Override
-	public IDiskCacheable get(Object key) {
+
+	public IMemCacheable get(String key) {
 		if (key == null) {
 			throw new NullPointerException("key == null");
 		}
 
-	    IDiskCacheable mapValue;
+        IMemCacheable mapValue;
 		synchronized (this) {
 			mapValue = mCacheMap.get(key);
 			if (mapValue != null) {
@@ -96,15 +97,13 @@ public class MemLruCache implements ICache {
 		}
 		return null;
 	}
-	
-	
-	@Override
-	public IDiskCacheable put(Object key, IDiskCacheable value) {
+
+	public IMemCacheable put(String key, IMemCacheable value) {
 		if (key == null || value == null) {
             throw new NullPointerException("key == null || value == null");
         }
 
-		IDiskCacheable previous = null;
+        IMemCacheable previous = null;
         synchronized (this) {
             mPutCount++;
             mCurrSize += safeSizeOf(key, value);
@@ -118,12 +117,12 @@ public class MemLruCache implements ICache {
         return previous;
 	}
 	
-	public IDiskCacheable remove(Object key){
+	public IMemCacheable remove(String key){
 		if (key == null) {
             throw new NullPointerException("key == null");
         }
 
-		IDiskCacheable previous = null;
+        IMemCacheable previous = null;
         synchronized (this) {
             previous = mCacheMap.remove(key);
             if (previous != null) {
@@ -133,8 +132,7 @@ public class MemLruCache implements ICache {
 
         return previous;
 	}
-	
-	@Override
+
 	public void reSize(long newMaxSize) {
 		if (newMaxSize <= 0) {
             throw new IllegalArgumentException("newMaxSize <= 0");

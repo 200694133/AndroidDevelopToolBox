@@ -20,9 +20,9 @@ public interface ICache {
 
     public void addCacheTypeListener(ICacheTypeListener listener);
 
-    public interface ICacheTypeListener{
-
-        public void onRemoved(String key);
+    public interface IMemCacheListener{
+        public void onRemoved(String key, IMemCacheable cacheable);
     }
+    public interface
 }
 

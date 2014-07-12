@@ -4,7 +4,6 @@ import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Message;
 import android.text.TextUtils;
-
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
@@ -17,11 +16,8 @@ import java.io.OutputStream;
 import java.io.Writer;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.WeakHashMap;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
+
 
 /**
  * Created by hanyanan on 2014/7/9.
@@ -101,8 +97,8 @@ public class DiskLruCache {
     };
     private transient final Handler mWorkHandler = new Handler(sWorkHandlerThread.getLooper(), mWorkCallback);
     private transient final Handler mJournalHandler = new Handler(sJournalHandlerThread.getLooper(), mJournalCallback);
-    private DiskLruCache(File directory, int appVersion, int valueCount, long maxSize) {
-        this.directory = directory;
+    DiskLruCache(String directory, int appVersion, int valueCount, long maxSize) {
+        this.directory = new File(directory);
         this.appVersion = appVersion;
         this.journalFile = new File(directory, JOURNAL_FILE);
         this.journalFileTmp = new File(directory, JOURNAL_FILE_TMP);
@@ -308,6 +304,30 @@ public class DiskLruCache {
         byte[] data = read(entry.getFreshFile());
         mLock.unlock();
         writeJournal(parseJournal(Action.READ_ACTION, entry, time));
+        return data;
+    }
+
+    public byte[] pull(String key) {
+        long time = System.currentTimeMillis();
+        mLock.lock();
+        Entry entry = lruEntries.get(key);
+        if(null == entry){
+            mLock.unlock();
+            return null;
+        }
+        if(time > entry.mCleanExpireTime){
+            remove(key);
+            return null;
+        }
+        if(entry.mStatus == STATUS.NEED_SYNC
+                || entry.mStatus == STATUS.SYNCING) {
+            mLock.unlock();
+            return entry.mData;
+        }
+        byte[] data = read(entry.getFreshFile());
+        mLock.unlock();
+        writeJournal(parseJournal(Action.READ_ACTION, entry, time));
+        writeJournal(parseJournal(Action.REMOVE_ACTION, entry, time));
         return data;
     }
 
