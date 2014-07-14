@@ -15,7 +15,7 @@ public class MemLruCache {
     private int mEvictionCount;
     private int mHitCount;
     private int mMissCount;
-    private ICache.ICacheTypeListener mCacheListener = null;
+    private ICache.IMemCacheListener mCacheListener = null;
 	
     /**
      * @param maxSize for caches in memory, this is the maximum sum of the sizes of the entries in this cache.
@@ -30,10 +30,13 @@ public class MemLruCache {
     public String toString(){
     	return new String("Put Count: "+mPutCount+" ,  Eviction Count"+mEvictionCount+" ,  Hit Count "+mHitCount+" ,  Miss Count"+mMissCount);
     }
-    
+
+    public void setCacheListener(ICache.IMemCacheListener listener){
+        mCacheListener = listener;
+    }
     protected void onEntryRemove(String key, IMemCacheable data){
     	if(null != mCacheListener){
-            mCacheListener.onRemoved(key);
+            mCacheListener.onRemoved(key, data);
         }
     }
     

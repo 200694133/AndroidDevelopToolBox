@@ -1,5 +1,6 @@
 package com.hanyanan.tools.cache;
 
+import android.os.Parcel;
 import android.text.TextUtils;
 
 import java.io.InputStream;
@@ -41,17 +42,20 @@ public class Cache {
 
     }
 
-    private ICache.ICacheTypeListener mMemListener = new ICache.ICacheTypeListener(){
+    private ICache.IMemCacheListener mMemListener = new ICache.IMemCacheListener(){
+        @Override
+        public void onRemoved(String key, IMemCacheable cacheable) {
+
+        }
+    };
+    private ICache.IDiskCacheListener mInternalDiskListener = new ICache.IDiskCacheListener(){
+        @Override
         public void onRemoved(String key) {
 
         }
     };
-    private ICache.ICacheTypeListener mInternalDiskListener = new ICache.ICacheTypeListener(){
-        public void onRemoved(String key) {
-
-        }
-    };
-    private ICache.ICacheTypeListener mExternalDiskListener = new ICache.ICacheTypeListener(){
+    private ICache.IDiskCacheListener mExternalDiskListener = new ICache.IDiskCacheListener(){
+        @Override
         public void onRemoved(String key) {
 
         }

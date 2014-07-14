@@ -5,24 +5,12 @@ public interface ICache {
         MEMORY,
         DISK
     }
-    /** get current cache type */
-    public CacheType getType();
-
-	public ICacheable get(String key);
-	
-	public ICacheable put(String key, ICacheable value);
-	
-	public ICacheable pull(String key);
-
-    public void clear();
-
-	public void reSize(long newMaxSize);
-
-    public void addCacheTypeListener(ICacheTypeListener listener);
 
     public interface IMemCacheListener{
         public void onRemoved(String key, IMemCacheable cacheable);
     }
-    public interface
+    public interface  IDiskCacheListener{
+        public void onRemoved(String key);
+    }
 }
 

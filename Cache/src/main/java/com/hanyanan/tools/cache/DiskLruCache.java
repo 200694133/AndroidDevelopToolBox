@@ -65,7 +65,7 @@ public class DiskLruCache {
     private Writer journalWriter;
     private final transient LinkedHashMap<String, Entry> lruEntries  = new LinkedHashMap<String, Entry>(0, 0.75f, true);
     private int redundantOpCount;
-    private ICache.ICacheTypeListener mCacheListener = null;
+    private ICache.IDiskCacheListener mCacheListener = null;
     private static final HandlerThread sWorkHandlerThread = new android.os.HandlerThread("DiskLruCache");
     private static final HandlerThread sJournalHandlerThread = new android.os.HandlerThread("DiskLruCache-Journal");
     static {
@@ -431,7 +431,7 @@ public class DiskLruCache {
         mWorkHandler.removeCallbacksAndMessages(null);
     }
 
-    public void setEntryListener(ICache.ICacheTypeListener lis){
+    public void setEntryListener(ICache.IDiskCacheListener lis){
         mCacheListener = lis;
     }
     private void notifyEntryRemove(String key){
