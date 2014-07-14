@@ -14,7 +14,6 @@ public class DiskDataPersistence {
 
     public final class Editor{
         private final Entry entry;
-        private boolean isReadable = true;
         private boolean isWritten = false;
         private Editor(Entry entry) {
             this.entry = entry;
@@ -25,15 +24,49 @@ public class DiskDataPersistence {
         public void abort(){
 
         }
-        public void setOutputStream(SafeOutputStream outputStream, long expireTime,
+        public void setOutputStream(SafeFileOutputStream outputStream, long expireTime,
                                     boolean autoClose){
 
         }
-        public SafeOutputStream newOutputStream(){
-            return null;
+        public SafeFileOutputStream newOutputStream(){
+            synchronized (DiskDataPersistence.this){
+                if (entry.currentEditor != this) {
+                    throw new IllegalStateException();
+                }
+                if (!entry.readable) {
+                    isWritten = true;
+                }
+                File dirtyFile = entry.getDirtyFile();
+                SafeFileOutputStream outputStream;
+                try {
+                    outputStream = new SafeFileOutputStream(dirtyFile);
+                } catch (Exception e) {
+                    // Attempt to recreate the cache directory.
+                    directory.mkdirs();
+                    try {
+                        outputStream = new SafeFileOutputStream(dirtyFile);
+                    } catch (Exception e2) {
+                        // We are unable to recover. Silently eat the writes.
+                        return null;
+                    }
+                }
+                return outputStream;
+            }
         }
-        public SafeInputStream newInputStream(){
-            return null;
+        public SafeFileInputStream newInputStream(){
+            synchronized (DiskDataPersistence.this){
+                if (entry.currentEditor != this) {
+                    throw new IllegalStateException();
+                }
+                if (!entry.readable) {
+                    return null;
+                }
+                try {
+                    return new SafeFileInputStream(entry.getCleanFile());
+                } catch (Exception e) {
+                    return null;
+                }
+            }
         }
         public void close(){
 
