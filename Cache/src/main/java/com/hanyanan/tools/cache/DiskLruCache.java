@@ -532,40 +532,6 @@ public class DiskLruCache {
         public void abort() throws IOException {
             abort = true;
         }
-
-        private class FaultHidingOutputStream extends FilterOutputStream {
-            private FaultHidingOutputStream(OutputStream out) {
-                super(out);
-            }
-            @Override public void write(int oneByte) {
-                try {
-                    out.write(oneByte);
-                } catch (IOException e) {
-                    hasErrors = true;
-                }
-            }
-            @Override public void write(byte[] buffer, int offset, int length) {
-                try {
-                    out.write(buffer, offset, length);
-                } catch (IOException e) {
-                    hasErrors = true;
-                }
-            }
-            @Override public void close() {
-                try {
-                    out.close();
-                } catch (IOException e) {
-                    hasErrors = true;
-                }
-            }
-            @Override public void flush() {
-                try {
-                    out.flush();
-                } catch (IOException e) {
-                    hasErrors = true;
-                }
-            }
-        }
     }
     private final class Entry{
         private String mKey;
