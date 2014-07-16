@@ -12,6 +12,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.concurrent.Callable;
@@ -400,8 +401,64 @@ public class DiskDataPersistence {
 //        }
     }
 
+    /**
+     * We only rebuild the journal when it will halve the size of the journal
+     * and eliminate at least 2000 ops.
+     */
+    private boolean journalRebuildRequired() {
+        final int redundantOpCompactThreshold = 2000;
+        return redundantOpCount >= redundantOpCompactThreshold //
+                && redundantOpCount >= lruEntries.size();
+    }
 
+    /**
+     * Drops the entry for {@code key} if it exists and can be removed. Entries
+     * actively being edited cannot be removed.
+     * @return true if an entry was removed.
+     */
+    public synchronized boolean remove(String key) throws IOException {
+        checkNotClosed();
+        validateKey(key);
+        Entry entry = lruEntries.get(key);
+        if (entry == null || entry.currentEditor != null) {
+            return false;
+        }
 
+        File file = entry.getCleanFile(i);
+        if (file.exists() && !file.delete()) {
+            throw new IOException("failed to delete " + file);
+        }
+//            size -= entry.lengths[i];
+//            entry.lengths[i] = 0;
+
+        redundantOpCount++;
+        journalWriter.append(Action.REMOVE_ACTION.getAction() + ' ' + key + '\n');
+        lruEntries.remove(key);
+
+//        if (journalRebuildRequired()) {
+//            executorService.submit(cleanupCallable);
+//        }
+        onEntryRemoved(key, entry.getLength());
+        return true;
+    }
+
+    /** Closes this cache. Stored values will remain on the filesystem. */
+    public synchronized void close() throws IOException {
+        if (journalWriter == null) {
+            return; // Already closed.
+        }
+        for (Entry entry : new ArrayList<Entry>(lruEntries.values())) {
+            if (entry.currentEditor != null) {
+                entry.currentEditor.abort();
+            }
+        }
+        journalWriter.close();
+        journalWriter = null;
+    }
+    /** Returns true if this cache has been closed. */
+    public synchronized boolean isClosed() {
+        return journalWriter == null;
+    }
 
     /** A snapshot of the values for an entry. */
     public final class Snapshot implements Closeable {
