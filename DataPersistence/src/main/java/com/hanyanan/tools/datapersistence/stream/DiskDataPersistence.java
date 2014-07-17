@@ -44,34 +44,15 @@ public class DiskDataPersistence {
     static final String JOURNAL_FILE_BACKUP = "journal.bkp";
     static final String MAGIC = "libcore.io.DiskLruCache";
     static final String VERSION_1 = "1";
-    static final long ANY_SEQUENCE_NUMBER = -1;
     static final Pattern LEGAL_KEY_PATTERN = Pattern.compile("[a-z0-9_-]{1,64}");
     private final File directory;
     private final File journalFile;
     private final File journalFileTmp;
-    private final File journalFileBackup;
     private final int appVersion;
     private Writer journalWriter;
     private final LinkedHashMap<String, Entry> lruEntries = new LinkedHashMap<String, Entry>(0, 0.75f, true);
     private int redundantOpCount;
-    /** This cache uses a single background thread to evict entries. */
-//    final ThreadPoolExecutor executorService =
-//            new ThreadPoolExecutor(0, 1, 60L, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>());
-//    private final Callable<Void> cleanupCallable = new Callable<Void>() {
-//        public Void call() throws Exception {
-//            synchronized (DiskDataPersistence.this) {
-//                if (journalWriter == null) {
-//                    return null; // Closed.
-//                }
-//                //TODO trimToSize();
-//                if (journalRebuildRequired()) {
-//                    rebuildJournal();
-//                    redundantOpCount = 0;
-//                }
-//            }
-//            return null;
-//        }
-//    };
+    private int maxEntries = 1000;
 
     protected void onEntryChanged(String key, long oldLength, long currLength){
         //TODO
@@ -82,15 +63,15 @@ public class DiskDataPersistence {
     protected void onEntryAdded(String key, long length){
         //TODO
     }
-    protected void onEntryClear(){
+    public void clear(){
         //TODO
     }
-    private DiskDataPersistence(File directory, int appVersion) {
+    private DiskDataPersistence(File directory, int appVersion, int maxLines) {
         this.directory = directory;
         this.appVersion = appVersion;
         this.journalFile = new File(directory, JOURNAL_FILE);
         this.journalFileTmp = new File(directory, JOURNAL_FILE_TEMP);
-        this.journalFileBackup = new File(directory, JOURNAL_FILE_BACKUP);
+        maxEntries = maxLines;
     }
 
     /**
@@ -100,8 +81,7 @@ public class DiskDataPersistence {
      * @param directory a writable directory
      * @throws IOException if reading or writing the cache directory fails
      */
-    public static DiskDataPersistence open(File directory, int appVersion)
-            throws IOException {
+    public static DiskDataPersistence open(File directory, int appVersion, int maxLines) throws IOException {
         // If a bkp file exists, use it instead.
         File backupFile = new File(directory, JOURNAL_FILE_BACKUP);
         if (backupFile.exists()) {
@@ -115,7 +95,7 @@ public class DiskDataPersistence {
         }
 
         // Prefer to pick up where we left off.
-        DiskDataPersistence cache = new DiskDataPersistence(directory, appVersion);
+        DiskDataPersistence cache = new DiskDataPersistence(directory, appVersion,maxLines);
         if (cache.journalFile.exists()) {
             try {
                 cache.readJournal();
@@ -132,7 +112,7 @@ public class DiskDataPersistence {
 
         // Create a new empty cache.
         directory.mkdirs();
-        cache = new DiskDataPersistence(directory, appVersion);
+        cache = new DiskDataPersistence(directory, appVersion,maxLines);
         cache.rebuildJournal();
         return cache;
     }
@@ -224,9 +204,9 @@ public class DiskDataPersistence {
 
             for (Entry entry : lruEntries.values()) {
                 if (entry.currentEditor != null) {
-                    writer.write(parseJournal(Action.DIRTY_ACTION, entry, System.currentTimeMillis()));
+                    writer.write(parseJournal(Action.DIRTY_ACTION, entry));
                 } else {
-                    writer.write(parseJournal(Action.CLEAN_ACTION, entry, System.currentTimeMillis()));
+                    writer.write(parseJournal(Action.CLEAN_ACTION, entry));
                 }
             }
 
@@ -235,26 +215,17 @@ public class DiskDataPersistence {
             journalWriter = new BufferedWriter(new FileWriter(journalFile, true));
         }
     }
-    private void writeJournal(String line){
-        synchronized (this) {
-            try {
-                journalWriter.write(line);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-    }
     private static void deleteIfExists(File file) throws IOException {
         if (file.exists() && !file.delete()) {
             throw new IOException("delete failed");
         }
     }
-    private static String parseJournal(Action action,Entry entry,long t) {
+    private static String parseJournal(Action action,Entry entry) {
         String res = action.getAction() + " " + entry.key;
         if (action == Action.CLEAN_ACTION) {
             res = res + " " + entry.expireTime + " " + entry.length;
         }
-        return res + " " + t;
+        return res + " " + System.currentTimeMillis();
     }
     private static void renameTo(File from, File to, boolean deleteDestination) throws IOException {
         if (deleteDestination) {
@@ -296,7 +267,8 @@ public class DiskDataPersistence {
                 return null;
             }
             redundantOpCount++;
-            journalWriter.append(Action.READ_ACTION.getAction() + ' ' + key + '\n');
+//            journalWriter.append(Action.READ_ACTION.getAction() + ' ' + key + '\n');
+            writeToJournal(parseJournal(Action.READ_ACTION, entry));
             if (journalRebuildRequired()) {
                 //TODO executorService.submit(cleanupCallable);
             }
@@ -324,7 +296,7 @@ public class DiskDataPersistence {
             entry.currentEditor = editor;
 
             // Flush the journal before creating files to prevent file leaks.
-            journalWriter.write(Action.DIRTY_ACTION.getAction() + ' ' + key + '\n');
+            journalWriter.write(parseJournal(Action.DIRTY_ACTION, entry));
             journalWriter.flush();
             return editor;
         }
@@ -368,10 +340,13 @@ public class DiskDataPersistence {
             entry.currentEditor = null;
             if (entry.readable | success) {
                 entry.readable = true;
-                journalWriter.write(Action.CLEAN_ACTION + " " + entry.key + entry.getLength() + "\n");
+//                journalWriter.write(Action.CLEAN_ACTION + " " + entry.key + entry.getLength() + "\n");
+                writeToJournal(parseJournal(Action.CLEAN_ACTION, entry));
             } else {
                 lruEntries.remove(entry.key);
-                journalWriter.write(Action.REMOVE_ACTION.getAction() + ' ' + entry.key + '\n');
+//                journalWriter.write(Action.REMOVE_ACTION.getAction() + ' ' + entry.key + '\n');
+                onEntryRemoved(entry.key, entry.getLength());
+                writeToJournal(parseJournal(Action.REMOVE_ACTION, entry));
             }
             journalWriter.flush();
 
@@ -381,6 +356,33 @@ public class DiskDataPersistence {
         }
     }
 
+    private void writeToJournal(String line){
+        synchronized (this) {
+            if (null != journalWriter) {
+                try {
+                    journalWriter.write(line);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+        rebuildJournalIfNecessary();
+    }
+    private void errorRecover(){
+        synchronized (this){
+            //TODO
+        }
+    }
+
+    private void rebuildJournalIfNecessary() {
+        final int redundantOpCompactThreshold = 2000;
+        synchronized (this){
+            if(redundantOpCount >= redundantOpCompactThreshold
+                    && redundantOpCount >= lruEntries.size()){
+                rebuildJournal();
+            }
+        }
+    }
     /**
      * We only rebuild the journal when it will halve the size of the journal
      * and eliminate at least 2000 ops.

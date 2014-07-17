@@ -194,15 +194,19 @@ public class StreamDataPersistence {
     }
 
     private void rebuildJournal() throws IOException {
-        Writer writer = new BufferedWriter(new FileWriter(journalFileTmp));
-        writer.write(MAGIC);
-        writer.write("\n");
-        writer.write(VERSION_1);
-        writer.write("\n");
-        writer.write(Integer.toString(appVersion));
-        writer.write("\n");
-        writer.write("\n");
         synchronized (this) {
+            if (journalWriter != null) {
+                journalWriter.close();
+            }
+            Writer writer = new BufferedWriter(new FileWriter(journalFileTmp));
+            writer.write(MAGIC);
+            writer.write("\n");
+            writer.write(VERSION_1);
+            writer.write("\n");
+            writer.write(Integer.toString(appVersion));
+            writer.write("\n");
+            writer.write("\n");
+
             for (Entry entry : lruEntries.values()) {
                 if (entry.currentEditor != null) {
                     writer.write(parseJournal(Action.DIRTY_ACTION, entry, System.currentTimeMillis()));
@@ -213,9 +217,6 @@ public class StreamDataPersistence {
 
             writer.close();
 
-            if (journalWriter != null) {
-                journalWriter.close();
-            }
             journalFileTmp.renameTo(journalFile);
             journalWriter = new BufferedWriter(new FileWriter(journalFile, true));
         }
@@ -257,9 +258,8 @@ public class StreamDataPersistence {
         }
     }
     /**
-     * Returns a snapshot of the entry named {@code key}, or null if it doesn't
-     * exist is not currently readable. If a value is returned, it is moved to
-     * the head of the LRU queue.
+     * Returns a snapshot of the entry named {@code key}, or null if it doesn't exist is not
+     * currently readable. If a value is returned, it is moved to the head of the LRU queue.
      */
     public Snapshot get(String key) throws IOException {
         synchronized (this) {
