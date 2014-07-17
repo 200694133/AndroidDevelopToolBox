@@ -1,4 +1,4 @@
-package com.hanyanan.tools.datapersistence;
+package com.hanyanan.tools.datapersistence.stream;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -9,7 +9,7 @@ import java.io.OutputStream;
 /**
  * Created by hanyanan on 2014/7/14.
  */
-public class SafeFileOutputStream extends FileOutputStream {
+class SafeFileOutputStream extends FileOutputStream {
     public SafeFileOutputStream(File file) throws FileNotFoundException {
         super(file);
     }

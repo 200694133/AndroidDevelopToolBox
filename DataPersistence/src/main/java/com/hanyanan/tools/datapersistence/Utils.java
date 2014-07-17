@@ -18,7 +18,7 @@ public class Utils {
     private Utils() {
         throw new UnsupportedOperationException("");
     }
-    static String readFully(Reader reader) throws IOException {
+    public static String readFully(Reader reader) throws IOException {
         try {
             StringWriter writer = new StringWriter();
             char[] buffer = new char[1024];
@@ -36,7 +36,7 @@ public class Utils {
      * Deletes the contents of {@code dir}. Throws an IOException if any file
      * could not be deleted, or if {@code dir} is not a readable directory.
      */
-    static void deleteContents(File dir) throws IOException {
+    public static void deleteContents(File dir) throws IOException {
         File[] files = dir.listFiles();
         if (files == null) {
             throw new IOException("not a readable directory: " + dir);
@@ -51,7 +51,7 @@ public class Utils {
         }
     }
 
-    static void closeQuietly(/*Auto*/Closeable closeable) {
+    public static void closeQuietly(/*Auto*/Closeable closeable) {
         if (closeable != null) {
             try {
                 closeable.close();

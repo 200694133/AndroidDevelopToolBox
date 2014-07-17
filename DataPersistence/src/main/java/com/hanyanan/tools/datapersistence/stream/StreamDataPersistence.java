@@ -1,11 +1,15 @@
-package com.hanyanan.tools.datapersistence;
+package com.hanyanan.tools.datapersistence.stream;
 
 import android.text.TextUtils;
+
+import com.hanyanan.tools.datapersistence.BusyException;
+import com.hanyanan.tools.datapersistence.Utils;
 
 import java.io.BufferedWriter;
 import java.io.Closeable;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -15,17 +19,14 @@ import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
-import java.util.concurrent.Callable;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
  * Created by hanyanan on 2014/7/14.
  */
-public class DiskDataPersistence {
+public class StreamDataPersistence {
     private enum Action{
         DIRTY_ACTION("DIRTY"),
         CLEAN_ACTION("CLEAN"),
@@ -42,13 +43,11 @@ public class DiskDataPersistence {
             return mAction;
         }
     }
-    private File directory;
     static final String JOURNAL_FILE = "journal";
     static final String JOURNAL_FILE_TEMP = "journal.tmp";
     static final String JOURNAL_FILE_BACKUP = "journal.bkp";
     static final String MAGIC = "libcore.io.DiskLruCache";
     static final String VERSION_1 = "1";
-    static final long ANY_SEQUENCE_NUMBER = -1;
     static final Pattern LEGAL_KEY_PATTERN = Pattern.compile("[a-z0-9_-]{1,64}");
     private final File directory;
     private final File journalFile;
@@ -58,24 +57,6 @@ public class DiskDataPersistence {
     private Writer journalWriter;
     private final LinkedHashMap<String, Entry> lruEntries = new LinkedHashMap<String, Entry>(0, 0.75f, true);
     private int redundantOpCount;
-    /** This cache uses a single background thread to evict entries. */
-    final ThreadPoolExecutor executorService =
-            new ThreadPoolExecutor(0, 1, 60L, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>());
-    private final Callable<Void> cleanupCallable = new Callable<Void>() {
-        public Void call() throws Exception {
-            synchronized (DiskDataPersistence.this) {
-                if (journalWriter == null) {
-                    return null; // Closed.
-                }
-                //TODO trimToSize();
-                if (journalRebuildRequired()) {
-                    rebuildJournal();
-                    redundantOpCount = 0;
-                }
-            }
-            return null;
-        }
-    };
 
     protected void onEntryChanged(String key, long oldLength, long currLength){
         //TODO
@@ -89,14 +70,12 @@ public class DiskDataPersistence {
     protected void onEntryClear(){
         //TODO
     }
-    private DiskDataPersistence(File directory, int appVersion, int valueCount, long maxSize) {
+    private StreamDataPersistence(File directory, int appVersion) {
         this.directory = directory;
         this.appVersion = appVersion;
         this.journalFile = new File(directory, JOURNAL_FILE);
         this.journalFileTmp = new File(directory, JOURNAL_FILE_TEMP);
         this.journalFileBackup = new File(directory, JOURNAL_FILE_BACKUP);
-//        this.valueCount = valueCount;
-//        this.maxSize = maxSize;
     }
 
     /**
@@ -104,19 +83,10 @@ public class DiskDataPersistence {
      * there.
      *
      * @param directory a writable directory
-     * @param valueCount the number of values per cache entry. Must be positive.
-     * @param maxSize the maximum number of bytes this cache should use to store
-     * @throws IOException if reading or writing the cache directory fails
+     * @throws java.io.IOException if reading or writing the cache directory fails
      */
-    public static DiskDataPersistence open(File directory, int appVersion, int valueCount, long maxSize)
+    public static StreamDataPersistence open(File directory, int appVersion)
             throws IOException {
-        if (maxSize <= 0) {
-            throw new IllegalArgumentException("maxSize <= 0");
-        }
-        if (valueCount <= 0) {
-            throw new IllegalArgumentException("valueCount <= 0");
-        }
-
         // If a bkp file exists, use it instead.
         File backupFile = new File(directory, JOURNAL_FILE_BACKUP);
         if (backupFile.exists()) {
@@ -130,7 +100,7 @@ public class DiskDataPersistence {
         }
 
         // Prefer to pick up where we left off.
-        DiskDataPersistence cache = new DiskDataPersistence(directory, appVersion, valueCount, maxSize);
+        StreamDataPersistence cache = new StreamDataPersistence(directory, appVersion);
         if (cache.journalFile.exists()) {
             try {
                 cache.readJournal();
@@ -139,19 +109,15 @@ public class DiskDataPersistence {
                         new OutputStreamWriter(new FileOutputStream(cache.journalFile, true), Utils.ASCII_CHARSET));
                 return cache;
             } catch (IOException journalIsCorrupt) {
-                System.out
-                        .println("DiskLruCache "
-                                + directory
-                                + " is corrupt: "
-                                + journalIsCorrupt.getMessage()
-                                + ", removing");
+                System.out.println("DiskLruCache " + directory + " is corrupt: "
+                        + journalIsCorrupt.getMessage() + ", removing");
                 cache.delete();
             }
         }
 
         // Create a new empty cache.
         directory.mkdirs();
-        cache = new DiskDataPersistence(directory, appVersion, valueCount, maxSize);
+        cache = new StreamDataPersistence(directory, appVersion);
         cache.rebuildJournal();
         return cache;
     }
@@ -161,15 +127,13 @@ public class DiskDataPersistence {
             String magic = reader.readLine();
             String version = reader.readLine();
             String appVersionString = reader.readLine();
-            String valueCountString = reader.readLine();
             String blank = reader.readLine();
             if (!MAGIC.equals(magic)
                     || !VERSION_1.equals(version)
                     || !Integer.toString(appVersion).equals(appVersionString)
-                    || !Integer.toString(valueCount).equals(valueCountString)
                     || !"".equals(blank)) {
                 throw new IOException("unexpected journal header: ["
-                        + magic + ", " + version + ", " + valueCountString + ", " + blank + "]");
+                        + magic + ", " + version + ", " + blank + "]");
             }
             int lineCount = 0;
             while (true) {
@@ -224,15 +188,12 @@ public class DiskDataPersistence {
                 entry.currentEditor = null;
                 deleteIfExists(entry.getCleanFile());
                 deleteIfExists(entry.getDirtyFile());
-                i.remove();
+                i.remove();//delete from list
             }
         }
     }
 
     private void rebuildJournal() throws IOException {
-        if (journalWriter != null) {
-            journalWriter.close();
-        }
         Writer writer = new BufferedWriter(new FileWriter(journalFileTmp));
         writer.write(MAGIC);
         writer.write("\n");
@@ -240,29 +201,26 @@ public class DiskDataPersistence {
         writer.write("\n");
         writer.write(Integer.toString(appVersion));
         writer.write("\n");
-        writer.write(Integer.toString(valueCount));
         writer.write("\n");
-        writer.write("\n");
-
-        for (Entry entry : lruEntries.values()) {
-            if (entry.currentEditor != null) {
-                writer.write(parseJournal(Action.DIRTY_ACTION, entry, System.currentTimeMillis()));
-            } else {
-                writer.write(parseJournal(Action.CLEAN_ACTION, entry, System.currentTimeMillis()));
+        synchronized (this) {
+            for (Entry entry : lruEntries.values()) {
+                if (entry.currentEditor != null) {
+                    writer.write(parseJournal(Action.DIRTY_ACTION, entry, System.currentTimeMillis()));
+                } else {
+                    writer.write(parseJournal(Action.CLEAN_ACTION, entry, System.currentTimeMillis()));
+                }
             }
-        }
 
-        writer.close();
-        journalFileTmp.renameTo(journalFile);
-        journalWriter = new BufferedWriter(new FileWriter(journalFile, true));
-    }
-    private synchronized void writeJournal(String line){
-        try {
-            journalWriter.write(line);
-        } catch (IOException e) {
-            e.printStackTrace();
+            writer.close();
+
+            if (journalWriter != null) {
+                journalWriter.close();
+            }
+            journalFileTmp.renameTo(journalFile);
+            journalWriter = new BufferedWriter(new FileWriter(journalFile, true));
         }
     }
+
     private static void deleteIfExists(File file) throws IOException {
         if (file.exists() && !file.delete()) {
             throw new IOException("delete failed");
@@ -284,14 +242,18 @@ public class DiskDataPersistence {
         }
     }
     private void checkNotClosed() {
-        if (journalWriter == null) {
-            throw new IllegalStateException("cache is closed");
+        synchronized (this) {
+            if (journalWriter == null) {
+                throw new IllegalStateException("cache is closed");
+            }
         }
     }
     private void validateKey(String key) {
-        Matcher matcher = LEGAL_KEY_PATTERN.matcher(key);
-        if (!matcher.matches()) {
-            throw new IllegalArgumentException("keys must match regex [a-z0-9_-]{1,64}: \"" + key + "\"");
+        synchronized (this) {
+            Matcher matcher = LEGAL_KEY_PATTERN.matcher(key);
+            if (!matcher.matches()) {
+                throw new IllegalArgumentException("keys must match regex [a-z0-9_-]{1,64}: \"" + key + "\"");
+            }
         }
     }
     /**
@@ -299,106 +261,101 @@ public class DiskDataPersistence {
      * exist is not currently readable. If a value is returned, it is moved to
      * the head of the LRU queue.
      */
-    public synchronized Snapshot get(String key) throws IOException {
-        checkNotClosed();
-        validateKey(key);
-        Entry entry = lruEntries.get(key);
-        if (entry == null) {
-            return null;
-        }
-        if (!entry.readable) {
-            return null;
-        }
-        redundantOpCount++;
-        journalWriter.append(READ + ' ' + key + '\n');
-        if (journalRebuildRequired()) {
-            executorService.submit(cleanupCallable);
-        }
+    public Snapshot get(String key) throws IOException {
+        synchronized (this) {
+            checkNotClosed();
+            validateKey(key);
+            Entry entry = lruEntries.get(key);
+            if (entry == null || !entry.readable) {
+                return null;
+            }
 
-        return new Snapshot(key, entry.sequenceNumber, entry.getLength());
+            redundantOpCount++;
+            journalWriter.append(Action.READ_ACTION.getAction() + ' ' + key + '\n');
+            if (journalRebuildRequired()) {
+                //TODO executorService.submit(cleanupCallable);
+            }
+
+            return entry.newSnapshot();
+        }
     }
     /**
      * Returns an editor for the entry named {@code key}, or null if another
      * edit is in progress.
      */
-    public Editor edit(String key) throws IOException {
-        return edit(key, ANY_SEQUENCE_NUMBER);
-    }
-    private synchronized Editor edit(String key, long expectedSequenceNumber) throws IOException, IllegalStateException {
-        checkNotClosed();
-        validateKey(key);
-        Entry entry = lruEntries.get(key);
-        if (expectedSequenceNumber != ANY_SEQUENCE_NUMBER && (entry == null
-                || entry.sequenceNumber != expectedSequenceNumber)) {
-            return null; // Snapshot is stale.
-        }
-        if (entry == null) {
-            entry = new Entry(key);
-            lruEntries.put(key, entry);
-        } else if (entry.currentEditor != null) {
-            throw new IllegalStateException("Another edit is in progress");
-        }
+    private Editor edit(String key) throws IOException {
+        synchronized (this) {
+            checkNotClosed();
+            validateKey(key);
+            Entry entry = lruEntries.get(key);
+            if (entry == null) {
+                entry = new Entry(key);
+                lruEntries.put(key, entry);
+            } else if (entry.currentEditor != null) {
+                throw new BusyException("Another edit is in progress, please try later!");
+            }
 
-        Editor editor = new Editor(entry);
-        entry.currentEditor = editor;
+            Editor editor = new Editor(entry);
+            entry.currentEditor = editor;
 
-        // Flush the journal before creating files to prevent file leaks.
-        journalWriter.write(Action.DIRTY_ACTION.getAction() + ' ' + key + '\n');
-        journalWriter.flush();
-        return editor;
+            // Flush the journal before creating files to prevent file leaks.
+            journalWriter.write(Action.DIRTY_ACTION.getAction() + ' ' + key + '\n');
+            journalWriter.flush();
+            return editor;
+        }
     }
 
-    private synchronized void completeEdit(Editor editor, boolean success) throws IOException {
-        Entry entry = editor.entry;
-        if (entry.currentEditor != editor) {
-            throw new IllegalStateException();
-        }
-
-        // If this edit is creating the entry for the first time, every index must have a value.
-        if (success && !entry.readable) {
-            if (!editor.isWritten) {
-                editor.abort();
-                throw new IllegalStateException("Newly created entry didn't create value. ");
+    private void completeEdit(Editor editor, boolean success) throws IOException {
+        synchronized (this) {
+            Entry entry = editor.entry;
+            if (entry.currentEditor != editor) {
+                throw new IllegalStateException();
             }
-            if (!entry.getDirtyFile().exists()) {
-                editor.abort();
-                return;
+            // If this edit is creating the entry for the first time, every index must have a value.
+            if (success && !entry.readable) {
+                if (!editor.isWritten) {
+                    editor.abort();
+                    throw new IllegalStateException("Newly created entry didn't create value. ");
+                }
+                if (!entry.getDirtyFile().exists()) {
+                    editor.abort();
+                    return;
+                }
             }
-        }
 
-        File dirty = entry.getDirtyFile();
-        if (success) {
-            if (dirty.exists()) {
-                File clean = entry.getCleanFile();
-                dirty.renameTo(clean);
-                long oldLength = entry.getLength();
-                long newLength = clean.length();
-                entry.length = newLength;
-//                size = size - oldLength + newLength;
-                onEntryChanged(entry.key, oldLength, newLength);
-            }
-        } else {
-            deleteIfExists(dirty);
-        }
-
-        redundantOpCount++;
-        entry.currentEditor = null;
-        if (entry.readable | success) {
-            entry.readable = true;
-            journalWriter.write(Action.CLEAN_ACTION + " " + entry.key + entry.getLength() + "\n");
+            File dirty = entry.getDirtyFile();
             if (success) {
-//                entry.sequenceNumber = nextSequenceNumber++;
-                entry.sequenceNumber = ANY_SEQUENCE_NUMBER;
+                if (dirty.exists()) {
+                    File clean = entry.getCleanFile();
+                    dirty.renameTo(clean);
+                    long oldLength = entry.getLength();
+                    long newLength = clean.length();
+                    entry.length = newLength;
+//                size = size - oldLength + newLength;
+                    entry.readable = true;
+                    entry.setClean();//dispose all snapshots
+                    onEntryChanged(entry.key, oldLength, newLength);
+                }
+            } else {
+                deleteIfExists(dirty);
             }
-        } else {
-            lruEntries.remove(entry.key);
-            journalWriter.write(Action.REMOVE_ACTION.getAction() + ' ' + entry.key + '\n');
-        }
-        journalWriter.flush();
+
+            redundantOpCount++;
+            entry.currentEditor = null;
+            if (entry.readable | success) {
+                entry.readable = true;
+                journalWriter.write(Action.CLEAN_ACTION + " " + entry.key + entry.getLength() + "\n");
+            } else {
+                lruEntries.remove(entry.key);
+                journalWriter.write(Action.REMOVE_ACTION.getAction() + ' ' + entry.key + '\n');
+                onEntryRemoved(entry.key, entry.getLength());
+            }
+            journalWriter.flush();
 
 //        if (size > maxSize || journalRebuildRequired()) {
 //            executorService.submit(cleanupCallable);
 //        }
+        }
     }
 
     /**
@@ -406,9 +363,23 @@ public class DiskDataPersistence {
      * and eliminate at least 2000 ops.
      */
     private boolean journalRebuildRequired() {
-        final int redundantOpCompactThreshold = 2000;
-        return redundantOpCount >= redundantOpCompactThreshold //
-                && redundantOpCount >= lruEntries.size();
+        synchronized (this) {
+            final int redundantOpCompactThreshold = 2000;
+            return redundantOpCount >= redundantOpCompactThreshold //
+                    && redundantOpCount >= lruEntries.size();
+        }
+    }
+
+    /**
+     * Closes the cache and deletes all of its stored values. This will delete
+     * all files in the cache directory including files that weren't created by
+     * the cache.
+     */
+    public void delete() throws IOException {
+        synchronized (this) {
+            close();
+            Utils.deleteContents(directory);
+        }
     }
 
     /**
@@ -416,77 +387,87 @@ public class DiskDataPersistence {
      * actively being edited cannot be removed.
      * @return true if an entry was removed.
      */
-    public synchronized boolean remove(String key) throws IOException {
-        checkNotClosed();
-        validateKey(key);
-        Entry entry = lruEntries.get(key);
-        if (entry == null || entry.currentEditor != null) {
-            return false;
-        }
+    public boolean remove(String key) throws IOException {
+        synchronized (this) {
+            checkNotClosed();
+            validateKey(key);
+            Entry entry = lruEntries.get(key);
+            if (entry == null || entry.currentEditor != null) {
+                return false;
+            }
 
-        File file = entry.getCleanFile(i);
-        if (file.exists() && !file.delete()) {
-            throw new IOException("failed to delete " + file);
-        }
+            File file = entry.getCleanFile();
+            if (file.exists() && !file.delete()) {
+                throw new IOException("failed to delete " + file);
+            }
 //            size -= entry.lengths[i];
 //            entry.lengths[i] = 0;
 
-        redundantOpCount++;
-        journalWriter.append(Action.REMOVE_ACTION.getAction() + ' ' + key + '\n');
-        lruEntries.remove(key);
+            redundantOpCount++;
+            journalWriter.append(Action.REMOVE_ACTION.getAction() + ' ' + key + '\n');
+            lruEntries.remove(key);
 
 //        if (journalRebuildRequired()) {
 //            executorService.submit(cleanupCallable);
 //        }
-        onEntryRemoved(key, entry.getLength());
-        return true;
+            onEntryRemoved(key, entry.getLength());
+            return true;
+        }
     }
 
     /** Closes this cache. Stored values will remain on the filesystem. */
-    public synchronized void close() throws IOException {
-        if (journalWriter == null) {
-            return; // Already closed.
-        }
-        for (Entry entry : new ArrayList<Entry>(lruEntries.values())) {
-            if (entry.currentEditor != null) {
-                entry.currentEditor.abort();
+    public void close() throws IOException {
+        synchronized (this) {
+            if (journalWriter == null) {
+                return; // Already closed.
             }
+            for (Entry entry : new ArrayList<Entry>(lruEntries.values())) {
+                if (entry.currentEditor != null) {
+                    entry.currentEditor.abort();
+                }
+            }
+            journalWriter.close();
+            journalWriter = null;
         }
-        journalWriter.close();
-        journalWriter = null;
     }
     /** Returns true if this cache has been closed. */
-    public synchronized boolean isClosed() {
+    public boolean isClosed() {
         return journalWriter == null;
     }
 
     /** A snapshot of the values for an entry. */
-    public final class Snapshot implements Closeable {
-        private final String key;
-        private final long sequenceNumber;
+    public class Snapshot implements Closeable {
+        private final Entry entry;
         private final long lengths;
-
-        private Snapshot(String key, long sequenceNumber, long lengths) {
-            this.key = key;
-            this.sequenceNumber = sequenceNumber;
+        private InputStream inputStream;
+        private Snapshot(Entry entry, long lengths) {
+            this.entry = entry;
             this.lengths = lengths;
         }
-        /**
-         * Returns an editor for this snapshot's entry, or null if either the
-         * entry has changed since this snapshot was created or if another edit
-         * is in progress.
-         */
-        public Editor edit() throws IOException {
-            return DiskDataPersistence.this.edit(key, sequenceNumber);
+        public InputStream getInputStream(){
+            synchronized (this) {
+                if (null != inputStream) return inputStream;
+                try {
+                    inputStream = new SafeFileInputStream(entry.getCleanFile());
+                    return inputStream;
+                } catch (FileNotFoundException e) {
+                    e.printStackTrace();
+                    return null;
+                }
+            }
         }
-
         /** Returns the byte length of the value. */
         public long getLength() {
             return lengths;
         }
 
         public void close() {
-            //TODO
+            synchronized (this) {
+                if (null != inputStream) {
+                    Utils.closeQuietly(inputStream);
+                }
+                inputStream = null;
+            }
         }
     }
 
@@ -546,24 +527,18 @@ public class DiskDataPersistence {
     public final class Editor{
         private final Entry entry;
         private boolean isWritten = false;
-        private SafeFileOutputStream prevOutputStream = null;
         private Editor(Entry entry) {
             this.entry = entry;
         }
         public void commit(){
-            try {
-                prevOutputStream.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            prevOutputStream = null;
+
         }
         public void abort(){
 
         }
 
         public SafeFileOutputStream newOutputStream(){
-            synchronized (DiskDataPersistence.this){
+            synchronized (StreamDataPersistence.this){
                 if (entry.currentEditor != this) {
                     throw new IllegalStateException();
                 }
@@ -571,39 +546,37 @@ public class DiskDataPersistence {
                     isWritten = true;
                 }
                 try {
-                    if(null != prevOutputStream){
-                        prevOutputStream.close();
-                    }
                     File dirtyFile = entry.getDirtyFile();
-                    prevOutputStream = new SafeFileOutputStream(dirtyFile);
+                    SafeFileOutputStream outputStream = new SafeFileOutputStream(dirtyFile);
+                    return outputStream;
                 } catch (Exception e) {
                     // Attempt to recreate the cache directory.
                     directory.mkdirs();
                     try {
-                        prevOutputStream = new SafeFileOutputStream(entry.getDirtyFile());
+                        SafeFileOutputStream outputStream = new SafeFileOutputStream(entry.getDirtyFile());
+                        return outputStream;
                     } catch (Exception e2) {
                         // We are unable to recover. Silently eat the writes.
                         return null;
                     }
                 }
-                return prevOutputStream;
             }
         }
-        public SafeFileInputStream newInputStream(){
-            synchronized (DiskDataPersistence.this){
-                if (entry.currentEditor != this) {
-                    throw new IllegalStateException();
-                }
-                if (!entry.readable || this.isWritten) {
-                    return null;
-                }
-                try {
-                    return new SafeFileInputStream(entry.getCleanFile());
-                } catch (Exception e) {
-                    return null;
-                }
-            }
-        }
+//        public SafeFileInputStream newInputStream(){
+//            synchronized (StreamDataPersistence.this){
+//                if (entry.currentEditor != this) {
+//                    throw new IllegalStateException();
+//                }
+//                if (!entry.readable || this.isWritten) {
+//                    return null;
+//                }
+//                try {
+//                    return new SafeFileInputStream(entry.getCleanFile());
+//                } catch (Exception e) {
+//                    return null;
+//                }
+//            }
+//        }
         public void close(){
 
         }
@@ -616,10 +589,28 @@ public class DiskDataPersistence {
         private long expireTime;
         /** True if this entry has ever been published. */
         private boolean readable;
-        private long sequenceNumber;
         /** The ongoing edit or null if this entry is not being edited. */
         private Editor currentEditor;
 
+        private final List<Snapshot> currSnapshots = new ArrayList<Snapshot>();
+
+        private Snapshot newSnapshot(){
+            Snapshot s = new Snapshot(this,length){
+                public void close() {
+                    super.close();
+                    currSnapshots.remove(this);
+                }
+            };
+            currSnapshots.add(s);
+            return s;
+        }
+
+        private void setClean(){
+            for(Snapshot ss : currSnapshots){
+                ss.close();
+            }
+            currSnapshots.clear();
+        }
         private Entry(String key) {
             this.key = key;
         }

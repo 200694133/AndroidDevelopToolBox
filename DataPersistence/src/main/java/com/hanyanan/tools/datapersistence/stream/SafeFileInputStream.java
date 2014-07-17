@@ -1,4 +1,4 @@
-package com.hanyanan.tools.datapersistence;
+package com.hanyanan.tools.datapersistence.stream;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -9,7 +9,7 @@ import java.io.InputStream;
 /**
  * Created by hanyanan on 2014/7/14.
  */
-public class SafeFileInputStream extends FileInputStream {
+class SafeFileInputStream extends FileInputStream {
     public SafeFileInputStream(File file) throws FileNotFoundException {
         super(file);
     }

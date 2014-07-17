@@ -1,4 +1,4 @@
-package com.hanyanan.tools.datapersistence;
+package com.hanyanan.tools.datapersistence.stream;
 
 /*
  * Copyright (C) 2012 The Android Open Source Project
@@ -15,6 +15,8 @@ package com.hanyanan.tools.datapersistence;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+import com.hanyanan.tools.datapersistence.Utils;
 
 import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
