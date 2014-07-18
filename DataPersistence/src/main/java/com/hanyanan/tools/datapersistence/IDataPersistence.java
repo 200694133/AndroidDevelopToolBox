@@ -5,7 +5,7 @@ package com.hanyanan.tools.datapersistence;
  */
 public interface IDataPersistence {
     public enum Type{
-        DISK, DATABASE,PREFERENCES
+        DISK, DATABASE,PREFERENCES, RUNTIME
     }
 
 

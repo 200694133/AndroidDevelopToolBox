@@ -2,7 +2,7 @@ package com.hanyanan.tools.datapersistence.stream;
 
 import android.text.TextUtils;
 
-import com.hanyanan.tools.datapersistence.BusyException;
+import com.hanyanan.tools.datapersistence.exception.BusyException;
 import com.hanyanan.tools.datapersistence.Utils;
 
 import java.io.BufferedWriter;
@@ -12,8 +12,10 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileWriter;
+import java.io.FilterOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.util.ArrayList;
@@ -209,9 +211,9 @@ public class StreamDataPersistence {
 
             for (Entry entry : lruEntries.values()) {
                 if (entry.currentEditor != null) {
-                    writer.write(parseJournal(Action.DIRTY_ACTION, entry, System.currentTimeMillis()));
+                    writer.write(parseJournal(Action.DIRTY_ACTION, entry));
                 } else {
-                    writer.write(parseJournal(Action.CLEAN_ACTION, entry, System.currentTimeMillis()));
+                    writer.write(parseJournal(Action.CLEAN_ACTION, entry));
                 }
             }
 
@@ -222,17 +224,36 @@ public class StreamDataPersistence {
         }
     }
 
+    private void writeToJournal(String line)throws IOException{
+        synchronized (this) {
+            if (null != journalWriter) {
+                journalWriter.write(line);
+                journalWriter.flush();
+            }
+        }
+        rebuildJournalIfNecessary();
+    }
+
+    private void rebuildJournalIfNecessary() throws IOException {
+        final int redundantOpCompactThreshold = 2000;
+        synchronized (this){
+            if(redundantOpCount >= redundantOpCompactThreshold
+                    && redundantOpCount >= lruEntries.size()){
+                rebuildJournal();
+            }
+        }
+    }
     private static void deleteIfExists(File file) throws IOException {
         if (file.exists() && !file.delete()) {
             throw new IOException("delete failed");
         }
     }
-    private static String parseJournal(Action action,Entry entry,long t) {
+    private static String parseJournal(Action action,Entry entry) {
         String res = action.getAction() + " " + entry.key;
         if (action == Action.CLEAN_ACTION) {
             res = res + " " + entry.expireTime + " " + entry.length;
         }
-        return res + " " + t;
+        return res + " " + System.currentTimeMillis();
     }
     private static void renameTo(File from, File to, boolean deleteDestination) throws IOException {
         if (deleteDestination) {
@@ -271,11 +292,8 @@ public class StreamDataPersistence {
             }
 
             redundantOpCount++;
-            journalWriter.append(Action.READ_ACTION.getAction() + ' ' + key + '\n');
-            if (journalRebuildRequired()) {
-                //TODO executorService.submit(cleanupCallable);
-            }
-
+//            journalWriter.append(Action.READ_ACTION.getAction() + ' ' + key + '\n');
+            writeToJournal(parseJournal(Action.READ_ACTION, entry));
             return entry.newSnapshot();
         }
     }
@@ -299,8 +317,9 @@ public class StreamDataPersistence {
             entry.currentEditor = editor;
 
             // Flush the journal before creating files to prevent file leaks.
-            journalWriter.write(Action.DIRTY_ACTION.getAction() + ' ' + key + '\n');
-            journalWriter.flush();
+//            journalWriter.write(Action.DIRTY_ACTION.getAction() + ' ' + key + '\n');
+//            journalWriter.flush();
+            writeToJournal(parseJournal(Action.DIRTY_ACTION, entry));
             return editor;
         }
     }
@@ -337,36 +356,22 @@ public class StreamDataPersistence {
                     onEntryChanged(entry.key, oldLength, newLength);
                 }
             } else {
-                deleteIfExists(dirty);
+                deleteIfExists(dirty);//abort
             }
 
             redundantOpCount++;
             entry.currentEditor = null;
             if (entry.readable | success) {
                 entry.readable = true;
-                journalWriter.write(Action.CLEAN_ACTION + " " + entry.key + entry.getLength() + "\n");
+//                journalWriter.write(Action.CLEAN_ACTION + " " + entry.key + entry.getLength() + "\n");
+                writeToJournal(parseJournal(Action.CLEAN_ACTION, entry));
             } else {
                 lruEntries.remove(entry.key);
-                journalWriter.write(Action.REMOVE_ACTION.getAction() + ' ' + entry.key + '\n');
+//                journalWriter.write(Action.REMOVE_ACTION.getAction() + ' ' + entry.key + '\n');
+                writeToJournal(parseJournal(Action.REMOVE_ACTION, entry));
                 onEntryRemoved(entry.key, entry.getLength());
             }
-            journalWriter.flush();
-
-//        if (size > maxSize || journalRebuildRequired()) {
-//            executorService.submit(cleanupCallable);
-//        }
-        }
-    }
-
-    /**
-     * We only rebuild the journal when it will halve the size of the journal
-     * and eliminate at least 2000 ops.
-     */
-    private boolean journalRebuildRequired() {
-        synchronized (this) {
-            final int redundantOpCompactThreshold = 2000;
-            return redundantOpCount >= redundantOpCompactThreshold //
-                    && redundantOpCount >= lruEntries.size();
+//            journalWriter.flush();
         }
     }
 
@@ -404,7 +409,8 @@ public class StreamDataPersistence {
 //            entry.lengths[i] = 0;
 
             redundantOpCount++;
-            journalWriter.append(Action.REMOVE_ACTION.getAction() + ' ' + key + '\n');
+//            journalWriter.append(Action.REMOVE_ACTION.getAction() + ' ' + key + '\n');
+            writeToJournal(parseJournal(Action.REMOVE_ACTION, entry));
             lruEntries.remove(key);
 
 //        if (journalRebuildRequired()) {
@@ -448,7 +454,7 @@ public class StreamDataPersistence {
             synchronized (this) {
                 if (null != inputStream) return inputStream;
                 try {
-                    inputStream = new SafeFileInputStream(entry.getCleanFile());
+                    inputStream = new FileInputStream(entry.getCleanFile());
                     return inputStream;
                 } catch (FileNotFoundException e) {
                     e.printStackTrace();
@@ -523,44 +529,65 @@ public class StreamDataPersistence {
             return isIllegal;
         }
     }
-
+    private static final OutputStream NULL_OUTPUT_STREAM = new OutputStream() {
+        @Override
+        public void write(int b) throws IOException {
+            // Eat all writes silently. Nom nom.
+        }
+    };
     public final class Editor{
         private final Entry entry;
         private boolean isWritten = false;
+        private boolean hasErrors = false;
+        private boolean committed = false;
         private Editor(Entry entry) {
             this.entry = entry;
         }
-        public void commit(){
-
+        public void commit() throws IOException {
+            if (hasErrors) {
+                completeEdit(this, false);
+                remove(entry.key); // The previous entry is stale.
+            } else {
+                completeEdit(this, true);
+            }
+            committed = true;
         }
-        public void abort(){
-
+        public void abort() throws IOException {
+            completeEdit(this, false);
         }
 
-        public SafeFileOutputStream newOutputStream(){
+        public OutputStream newOutputStream(){
             synchronized (StreamDataPersistence.this){
                 if (entry.currentEditor != this) {
                     throw new IllegalStateException();
                 }
                 if (!entry.readable) {
-                    isWritten = true;
+                    isWritten = true;//called when create the entry
                 }
+                File dirtyFile = entry.getDirtyFile();
+                FileOutputStream outputStream;
                 try {
-                    File dirtyFile = entry.getDirtyFile();
-                    SafeFileOutputStream outputStream = new SafeFileOutputStream(dirtyFile);
-                    return outputStream;
+                    outputStream = new FileOutputStream(dirtyFile);
                 } catch (Exception e) {
                     // Attempt to recreate the cache directory.
                     directory.mkdirs();
                     try {
-                        SafeFileOutputStream outputStream = new SafeFileOutputStream(entry.getDirtyFile());
-                        return outputStream;
+                        outputStream = new FileOutputStream(dirtyFile);
                     } catch (Exception e2) {
                         // We are unable to recover. Silently eat the writes.
-                        return null;
+                        return NULL_OUTPUT_STREAM;
                     }
                 }
+                return new FaultHidingOutputStream(outputStream);
             }
+        }
+
+        public void setContent(byte[] content) throws IOException {
+            OutputStream outputStream = newOutputStream();
+            outputStream.write(content);
+            outputStream.flush();
+            commit();
+            Utils.closeQuietly(outputStream);
         }
 //        public SafeFileInputStream newInputStream(){
 //            synchronized (StreamDataPersistence.this){
@@ -579,6 +606,43 @@ public class StreamDataPersistence {
 //        }
         public void close(){
 
+        }
+        private class FaultHidingOutputStream extends FilterOutputStream {
+            private FaultHidingOutputStream(OutputStream out) {
+                super(out);
+            }
+
+            @Override public void write(int oneByte) {
+                try {
+                    out.write(oneByte);
+                } catch (IOException e) {
+                    hasErrors = true;
+                }
+            }
+
+            @Override public void write(byte[] buffer, int offset, int length) {
+                try {
+                    out.write(buffer, offset, length);
+                } catch (IOException e) {
+                    hasErrors = true;
+                }
+            }
+
+            @Override public void close() {
+                try {
+                    out.close();
+                } catch (IOException e) {
+                    hasErrors = true;
+                }
+            }
+
+            @Override public void flush() {
+                try {
+                    out.flush();
+                } catch (IOException e) {
+                    hasErrors = true;
+                }
+            }
         }
     }
     private final class Entry {

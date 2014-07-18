@@ -1,5 +1,7 @@
 package com.hanyanan.tools.datapersistence;
 
+import android.content.Context;
+
 import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
@@ -68,5 +70,9 @@ public class Utils {
         Thread.currentThread().interrupt();
         // TODO: set InterruptedIOException.bytesTransferred
         throw new InterruptedIOException();
+    }
+
+    public File getInternalStorageDirector(Context context, String dir){
+        return context.getDir(dir, 0);
     }
 }

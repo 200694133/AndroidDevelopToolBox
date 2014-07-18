@@ -1,4 +1,4 @@
-package com.hanyanan.tools.datapersistence;
+package com.hanyanan.tools.datapersistence.exception;
 
 /**
  * Created by hanyanan on 2014/7/17.

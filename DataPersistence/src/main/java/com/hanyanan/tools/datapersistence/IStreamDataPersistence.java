@@ -1,4 +1,4 @@
-package com.hanyanan.tools.datapersistence.stream;
+package com.hanyanan.tools.datapersistence;
 
 import java.io.IOException;
 import java.io.InputStream;
