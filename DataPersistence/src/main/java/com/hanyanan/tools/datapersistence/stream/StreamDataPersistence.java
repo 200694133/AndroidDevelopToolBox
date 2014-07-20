@@ -301,7 +301,7 @@ public class StreamDataPersistence {
      * Returns an editor for the entry named {@code key}, or null if another
      * edit is in progress.
      */
-    private Editor edit(String key) throws IOException {
+    public Editor edit(String key) throws IOException {
         synchronized (this) {
             checkNotClosed();
             validateKey(key);
