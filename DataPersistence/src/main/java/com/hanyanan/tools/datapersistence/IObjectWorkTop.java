@@ -26,18 +26,18 @@ public interface IObjectWorkTop {
      * @param key key storage
      * @return stable value
      */
-    public IDataResult remove(String key,  Class clazz);
+    public IDataResult remove(String key);
 
     /**
      *
      * @param key
      * @param listener
      */
-    public void removeAsync(String key, Class clazz, IOnObjectResult listener);
+    public void removeAsync(String key, IOnObjectResult listener);
 
-    public IDataResult get(String key, Class clazz);
+    public IDataResult get(String key);
 
-    public void getAsync(String key, Class clazz, IOnObjectResult listener);
+    public void getAsync(String key, IOnObjectResult listener);
 
     public interface IDataChangeObserver<T extends Serializable>{
         public void onDataChanged(String key, T curr, T prev);
