@@ -2,11 +2,19 @@ package com.hanyanan.tools.datapersistence;
 
 import android.content.Context;
 
+import com.hanyanan.tools.datapersistence.storage.BaseType;
+
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
 import java.io.InterruptedIOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.io.Reader;
+import java.io.Serializable;
+import java.io.StreamCorruptedException;
 import java.io.StringWriter;
 import java.nio.charset.Charset;
 
@@ -74,5 +82,58 @@ public class Utils {
 
     public File getInternalStorageDirector(Context context, String dir){
         return context.getDir(dir, 0);
+    }
+
+    public static BaseType createBaseType(String data){
+        final String con = data;
+        return new BaseType() {
+            @Override
+            public String getContent() {
+                return con;
+            }
+
+            @Override
+            public long getExpireTime() {
+                return -1;
+            }
+        };
+    }
+
+
+    public static byte[] serialize(Serializable content){
+        try {
+            ByteArrayOutputStream mem_out = new ByteArrayOutputStream();
+            ObjectOutputStream out = new ObjectOutputStream(mem_out);
+
+            out.writeObject(content);
+
+            out.close();
+            mem_out.close();
+
+            byte[] bytes =  mem_out.toByteArray();
+            return bytes;
+        } catch (IOException e) {
+            return null;
+        }
+    }
+
+    public static Serializable deSerialize(byte[] bytes){
+        try {
+            ByteArrayInputStream mem_in = new ByteArrayInputStream(bytes);
+            ObjectInputStream in = new ObjectInputStream(mem_in);
+
+            Serializable content = (Serializable)in.readObject();
+
+            in.close();
+            mem_in.close();
+
+            return content;
+        } catch (StreamCorruptedException e) {
+            return null;
+        } catch (ClassNotFoundException e) {
+            return null;
+        }   catch (IOException e) {
+            return null;
+        }
     }
 }

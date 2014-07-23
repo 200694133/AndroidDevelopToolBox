@@ -1,4 +1,4 @@
-package com.hanyanan.tools.datapersistence.stream;
+package com.hanyanan.tools.datapersistence.storage;
 
 import android.text.TextUtils;
 
@@ -28,7 +28,7 @@ import java.util.regex.Pattern;
 /**
  * Created by hanyanan on 2014/7/14.
  */
-public class StreamDataPersistence {
+class StreamStorageDriver {
     private enum Action{
         DIRTY_ACTION("DIRTY"),
         CLEAN_ACTION("CLEAN"),
@@ -72,7 +72,7 @@ public class StreamDataPersistence {
     protected void onEntryClear(){
         //TODO
     }
-    private StreamDataPersistence(File directory, int appVersion) {
+    private StreamStorageDriver(File directory, int appVersion) {
         this.directory = directory;
         this.appVersion = appVersion;
         this.journalFile = new File(directory, JOURNAL_FILE);
@@ -87,7 +87,7 @@ public class StreamDataPersistence {
      * @param directory a writable directory
      * @throws java.io.IOException if reading or writing the cache directory fails
      */
-    public static StreamDataPersistence open(File directory, int appVersion)
+    static StreamStorageDriver open(File directory, int appVersion)
             throws IOException {
         // If a bkp file exists, use it instead.
         File backupFile = new File(directory, JOURNAL_FILE_BACKUP);
@@ -102,7 +102,7 @@ public class StreamDataPersistence {
         }
 
         // Prefer to pick up where we left off.
-        StreamDataPersistence cache = new StreamDataPersistence(directory, appVersion);
+        StreamStorageDriver cache = new StreamStorageDriver(directory, appVersion);
         if (cache.journalFile.exists()) {
             try {
                 cache.readJournal();
@@ -119,7 +119,7 @@ public class StreamDataPersistence {
 
         // Create a new empty cache.
         directory.mkdirs();
-        cache = new StreamDataPersistence(directory, appVersion);
+        cache = new StreamStorageDriver(directory, appVersion);
         cache.rebuildJournal();
         return cache;
     }
@@ -557,7 +557,7 @@ public class StreamDataPersistence {
         }
 
         public OutputStream newOutputStream(){
-            synchronized (StreamDataPersistence.this){
+            synchronized (StreamStorageDriver.this){
                 if (entry.currentEditor != this) {
                     throw new IllegalStateException();
                 }

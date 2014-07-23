@@ -1,51 +1,47 @@
-package com.hanyanan.tools.datapersistence;
+package com.hanyanan.tools.datapersistence.storage;
 
 
-import com.hanyanan.tools.datapersistence.stream.StreamDataPersistence;
-import java.io.File;
+import com.hanyanan.tools.datapersistence.DataError;
+import com.hanyanan.tools.datapersistence.IAsyncObjectWorkStation;
+import com.hanyanan.tools.datapersistence.IObjectWorkStation;
+import com.hanyanan.tools.datapersistence.IResult;
+import com.hanyanan.tools.datapersistence.SimpleResult;
+
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
-import java.lang.reflect.Type;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 /**
  * Created by hanyanan on 2014/7/18.
  */
-public class ObjectStreamWorktop implements IObjectWorkTop{
+public class ObjectStreamStorage implements IAsyncObjectWorkStation, IObjectWorkStation {
     private static final int PUT = 0x01;
     private static final int REMOVE = 0x02;
     private static final int GET = 0x03;
-    private static final String TAG = ObjectStreamWorktop.class.getSimpleName();
-    private final StreamDataPersistence mStreamDataPersistence;
+    private static final String TAG = ObjectStreamStorage.class.getSimpleName();
+    private final StreamStorageDriver mStreamStorageDriver;
     private final static ExecutorService service = Executors.newSingleThreadExecutor();
 
-    public ObjectStreamWorktop(File directory){
-        StreamDataPersistence mStreamDataPersistence1;
-        try {
-            mStreamDataPersistence1 = StreamDataPersistence.open(directory, 1);
-        } catch (IOException e) {
-            e.printStackTrace();
-            mStreamDataPersistence1 = null;
-        }
-        mStreamDataPersistence = mStreamDataPersistence1;
+    ObjectStreamStorage(StreamStorageDriver driver){
+        mStreamStorageDriver = driver;
     }
 
     @Override
-    public IDataResult put(final String key, final Serializable value) {
-        StreamDataPersistence.Editor editor = null;
-        SimpleDataResult result = null;
+    public IResult put(final String key, final Serializable value) {
+        StreamStorageDriver.Editor editor = null;
+        SimpleResult result = null;
         try {
-            editor = mStreamDataPersistence.edit(key);
+            editor = mStreamStorageDriver.edit(key);
             ObjectOutputStream os = new ObjectOutputStream(editor.newOutputStream());
             os.writeObject(value);
             os.close();
-            result = new SimpleDataResult(null);
+            result = new SimpleResult(null);
         } catch (IOException e) {
             e.printStackTrace();
-            result = new SimpleDataResult(null, new DataError(DataError.FAILED, e.toString()));
+            result = new SimpleResult(null, new DataError(DataError.FAILED, e.toString()));
         }
         return result;
     }
@@ -57,14 +53,14 @@ public class ObjectStreamWorktop implements IObjectWorkTop{
     }
 
     @Override
-    public IDataResult remove(String key) {
-        SimpleDataResult result = null;
+    public IResult remove(String key) {
+        SimpleResult result = null;
         try {
-            mStreamDataPersistence.remove(key);
-            result = new SimpleDataResult(null);
+            mStreamStorageDriver.remove(key);
+            result = new SimpleResult(null);
         } catch (IOException e) {
             e.printStackTrace();
-            result = new SimpleDataResult(null, new DataError(DataError.FAILED, e.toString()));
+            result = new SimpleResult(null, new DataError(DataError.FAILED, e.toString()));
         }
         return result;
     }
@@ -76,20 +72,20 @@ public class ObjectStreamWorktop implements IObjectWorkTop{
     }
 
     @Override
-    public IDataResult get(String key) {
-        SimpleDataResult result = null;
+    public IResult get(String key) {
+        SimpleResult result = null;
         try {
-            StreamDataPersistence.Snapshot shot = mStreamDataPersistence.get(key);
+            StreamStorageDriver.Snapshot shot = mStreamStorageDriver.get(key);
             ObjectInputStream is = new ObjectInputStream(shot.getInputStream());
             Object res = is.readObject();
             is.close();
-            result = new SimpleDataResult(res);
+            result = new SimpleResult(res);
         } catch (IOException e) {
             e.printStackTrace();
-            result = new SimpleDataResult(null, new DataError(DataError.FAILED, e.toString()));
+            result = new SimpleResult(null, new DataError(DataError.FAILED, e.toString()));
         } catch (ClassNotFoundException e) {
             e.printStackTrace();
-            result = new SimpleDataResult(null, new DataError(DataError.FAILED, e.toString()));
+            result = new SimpleResult(null, new DataError(DataError.FAILED, e.toString()));
         }
         return result;
     }
@@ -120,19 +116,19 @@ public class ObjectStreamWorktop implements IObjectWorkTop{
         public void run() {
             switch (mCommand){
                 case PUT: {
-                    IDataResult result = put(mKey, mContent);
+                    IResult result = put(mKey, mContent);
                     if (null == mListener) return;
                     IOnObjectResult lis = (IOnObjectResult) mListener;
                     lis.onResult(mKey, result);
                     break;}
                 case GET:{
-                    IDataResult result = get(mKey);
+                    IResult result = get(mKey);
                     if (null == mListener) return;
                     IOnObjectResult lis = (IOnObjectResult) mListener;
                     lis.onResult(mKey, result);
                     break;}
                 case REMOVE: {
-                    IDataResult result = remove(mKey);
+                    IResult result = remove(mKey);
                     if (null == mListener) return;
                     IOnObjectResult lis = (IOnObjectResult) mListener;
                     lis.onResult(mKey, result);

@@ -3,7 +3,7 @@ package com.hanyanan.tools.datapersistence;
 /**
  * Created by hanyanan on 2014/7/21.
  */
-public interface IBaseWorkTop {
+public interface IBaseDataWorkStation {
     public void put(String key, int value);
     public void put(String key, float value);
     public void put(String key, double value);
@@ -11,6 +11,8 @@ public interface IBaseWorkTop {
     public void put(String key, long value);
     public void put(String key, short value);
     public void put(String key, char value);
+    public void put(String key, String value);
+    public void put(String key, byte[] value);
 
     public int getInt(String key);
     public float getFloat(String key);
@@ -19,7 +21,7 @@ public interface IBaseWorkTop {
     public byte getByte(String key);
     public char getChar(String key);
     public short getShort(String key);
+    public byte[] getBlob(String key);
 
-
-    public IDataResult remove(String key);
+    public IResult remove(String key);
 }

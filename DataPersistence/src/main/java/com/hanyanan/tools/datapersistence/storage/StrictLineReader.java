@@ -1,4 +1,4 @@
-package com.hanyanan.tools.datapersistence.stream;
+package com.hanyanan.tools.datapersistence.storage;
 
 /*
  * Copyright (C) 2012 The Android Open Source Project
@@ -43,7 +43,7 @@ import java.nio.charset.Charset;
  * We currently check in constructor that the charset is one of US-ASCII, UTF-8 and ISO-8859-1.
  * The default charset is US_ASCII.
  */
-public class StrictLineReader implements Closeable {
+class StrictLineReader implements Closeable {
     private static final byte CR = (byte)'\r';
     private static final byte LF = (byte)'\n';
     private final InputStream in;

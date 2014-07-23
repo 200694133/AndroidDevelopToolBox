@@ -1,9 +1,9 @@
-package com.hanyanan.tools.datapersistence.db;
+package com.hanyanan.tools.datapersistence.storage;
 
 /**
  * Created by hanyanan on 2014/7/21.
  */
-interface BaseType {
+public interface BaseType {
     public String getContent();
     public long getExpireTime();
 }

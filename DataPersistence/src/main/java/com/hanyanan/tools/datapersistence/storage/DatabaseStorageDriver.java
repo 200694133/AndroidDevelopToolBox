@@ -1,4 +1,4 @@
-package com.hanyanan.tools.datapersistence.db;
+package com.hanyanan.tools.datapersistence.storage;
 
 import android.content.Context;
 import android.database.Cursor;
@@ -8,11 +8,12 @@ import android.database.sqlite.SQLiteOpenHelper;
 import android.database.sqlite.SQLiteStatement;
 import android.util.Log;
 
+
 /**
  * Created by hanyanan on 2014/7/21.
  */
-public class DBHelper extends SQLiteOpenHelper {
-    private static final String TAG = DBHelper.class.getSimpleName();
+class DatabaseStorageDriver extends SQLiteOpenHelper {
+    private static final String TAG = DatabaseStorageDriver.class.getSimpleName();
     private static final String DB_NAME = "private_data_persistence.db";
     private static final int VERSION = 1;
     private static final String TABLE = "data_table";
@@ -28,7 +29,7 @@ public class DBHelper extends SQLiteOpenHelper {
     private SQLiteStatement mDeleteStatement = null;
     private SQLiteStatement mUpdateTextStatement = null;
     private SQLiteStatement mUpdateBlobStatement = null;
-    public DBHelper(Context context) {
+    DatabaseStorageDriver(Context context) {
         super(context,context.getDatabasePath(DB_NAME).getAbsolutePath(), null,
                 VERSION, mDatabaseErrorHandler);
     }
@@ -128,20 +129,64 @@ public class DBHelper extends SQLiteOpenHelper {
     }
 
     public long update(String key, String data){
-        if (mUpdateStatement == null) {
-            mUpdateStatement = getWritableDatabase().compileStatement(
-                    "UPDATE " + TABLE_NAME + " SET "
-                            + FIELD_END_TIME + " = ? WHERE "
-                            + FIELD_ID + " = ?");
+        if (mUpdateTextStatement == null) {
+            mUpdateTextStatement = getWritableDatabase().compileStatement(
+                    "UPDATE " + TABLE + " SET "
+                            + BaseColumns.CONTENT_TEXT + " = ? WHERE "
+                            + BaseColumns.KEY + " = ?");
         }
-        mUpdateStatement.bindLong(1, endTime);
-        mUpdateStatement.bindLong(2, id);
-        return mUpdateStatement.executeUpdateDelete();
+        mUpdateTextStatement.bindString(1, data);
+        mUpdateTextStatement.bindString(2, key);
+        return mUpdateTextStatement.executeUpdateDelete();
     }
 
+    public long update(String key, byte[] data){
+
+        if (mUpdateBlobStatement == null) {
+            mUpdateBlobStatement = getWritableDatabase().compileStatement(
+                    "UPDATE " + TABLE + " SET "
+                            + BaseColumns.CONTENT_BLOB + " = ? WHERE "
+                            + BaseColumns.KEY + " = ?");
+        }
+        mUpdateBlobStatement.bindBlob(1, data);
+        mUpdateBlobStatement.bindString(2, key);
+        return mUpdateBlobStatement.executeUpdateDelete();
+    }
+
+    public boolean isExists(String key){
+        String sql = "select "+BaseColumns.EXPIRE_TIME+
+                " from " + TABLE + " where "+BaseColumns.KEY + " = ? ";
+        Cursor cursor = getReadableDatabase().rawQuery(sql, new String[]{key});
+        if(cursor == null || cursor.isClosed() || !cursor.moveToFirst()) return false;
+        if(cursor.moveToNext()){
+            long et = cursor.getLong(cursor.getColumnIndex(BaseColumns.EXPIRE_TIME));
+            if(et > System.currentTimeMillis()) return false;
+            return true;
+        }
+        return false;
+    }
     public void close(){
+        if(null != mInsertTextStatement){
+            mInsertTextStatement.close();
+            mInsertTextStatement = null;
+        }
+        if(null != mInsertBlobStatement){
+            mInsertBlobStatement.close();
+            mInsertBlobStatement = null;
+        }
+        if(null != mDeleteStatement){
+            mDeleteStatement.close();
+            mDeleteStatement = null;
+        }
+        if(null != mUpdateTextStatement){
+            mUpdateTextStatement.close();
+            mUpdateTextStatement = null;
+        }
+        if(null != mUpdateBlobStatement){
+            mUpdateBlobStatement.close();
+            mUpdateBlobStatement = null;
+        }
         super.close();
-        //TODO
     }
 
     @Override

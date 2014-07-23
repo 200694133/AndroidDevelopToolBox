@@ -3,11 +3,11 @@ package com.hanyanan.tools.datapersistence.exception;
 /**
  * Created by hanyanan on 2014/7/17.
  */
-public class DataException extends RuntimeException {
-    public DataException(){
+public class BasicException extends RuntimeException {
+    public BasicException(){
         super();
     }
-    public DataException(String s){
+    public BasicException(String s){
         super(s);
     }
 }
