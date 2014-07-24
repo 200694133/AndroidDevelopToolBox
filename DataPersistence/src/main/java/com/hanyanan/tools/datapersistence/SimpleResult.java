@@ -3,7 +3,7 @@ package com.hanyanan.tools.datapersistence;
 /**
  * Created by Administrator on 2014/7/19.
  */
-public class SimpleResult<T> implements IResult {
+public class SimpleResult<T> implements IResult<T> {
     private T mResult;
     private DataError mDataError;
     public SimpleResult(T result){

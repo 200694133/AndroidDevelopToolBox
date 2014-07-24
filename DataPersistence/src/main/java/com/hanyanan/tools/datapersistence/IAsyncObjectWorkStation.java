@@ -11,19 +11,14 @@ public interface IAsyncObjectWorkStation {
      * @param key key storage
      * @param listener the listener to get the current content
      */
-    public void putAsync(String key, final Serializable value, IOnObjectResult listener);
+    public void putAsync(String key, final Serializable value, long expireTime, IAsyncResult listener);
 
     /**
      *
      * @param key
      * @param listener
      */
-    public void removeAsync(String key, IOnObjectResult listener);
+    public void removeAsync(String key, IAsyncResult listener);
 
-    public void getAsync(String key, IOnObjectResult listener);
-
-
-    public interface IOnObjectResult<T extends Serializable>{
-        public void onResult(String key, IResult result);
-    }
+    public void getAsync(String key, IAsyncResult listener);
 }

@@ -55,7 +55,7 @@ class DatabaseStorageDriver extends SQLiteOpenHelper {
         sqLiteDatabase.execSQL(sCmd);
     }
 
-    public long insert(final String key, BaseType content){
+    public long insert(final String key, BaseDataParam content){
         if(null == mInsertTextStatement){
             mInsertTextStatement = getWritableDatabase().compileStatement(
                     "INSERT INTO  " + TABLE + "("
@@ -73,7 +73,7 @@ class DatabaseStorageDriver extends SQLiteOpenHelper {
         return mInsertTextStatement.executeInsert();
     }
 
-    public long insert(final String key, BlobType blob){
+    public long insert(final String key, BlobDataParam blob){
         if(null == mInsertBlobStatement){
             mInsertBlobStatement = getWritableDatabase().compileStatement(
                     "INSERT INTO  " + TABLE + "("
@@ -128,28 +128,31 @@ class DatabaseStorageDriver extends SQLiteOpenHelper {
         return mDeleteStatement.executeUpdateDelete();
     }
 
-    public long update(String key, String data){
+    public long update(String key, BaseDataParam content){
         if (mUpdateTextStatement == null) {
             mUpdateTextStatement = getWritableDatabase().compileStatement(
                     "UPDATE " + TABLE + " SET "
-                            + BaseColumns.CONTENT_TEXT + " = ? WHERE "
+                            + BaseColumns.CONTENT_TEXT + " = ? , "+BaseColumns.EXPIRE_TIME
+                            +" = ? WHERE "
                             + BaseColumns.KEY + " = ?");
         }
-        mUpdateTextStatement.bindString(1, data);
-        mUpdateTextStatement.bindString(2, key);
+        mUpdateTextStatement.bindString(1, content.getContent());
+        mUpdateTextStatement.bindLong(2, content.getExpireTime());
+        mUpdateTextStatement.bindString(3, key);
         return mUpdateTextStatement.executeUpdateDelete();
     }
 
-    public long update(String key, byte[] data){
-
+    public long update(String key, BlobDataParam param){
         if (mUpdateBlobStatement == null) {
             mUpdateBlobStatement = getWritableDatabase().compileStatement(
                     "UPDATE " + TABLE + " SET "
-                            + BaseColumns.CONTENT_BLOB + " = ? WHERE "
+                            + BaseColumns.CONTENT_BLOB + " = ? , "+BaseColumns.EXPIRE_TIME
+                            +" = ? WHERE "
                             + BaseColumns.KEY + " = ?");
         }
-        mUpdateBlobStatement.bindBlob(1, data);
-        mUpdateBlobStatement.bindString(2, key);
+        mUpdateBlobStatement.bindBlob(1, param.getData());
+        mUpdateBlobStatement.bindLong(2, param.getExpireTime());
+        mUpdateBlobStatement.bindString(3, key);
         return mUpdateBlobStatement.executeUpdateDelete();
     }
 

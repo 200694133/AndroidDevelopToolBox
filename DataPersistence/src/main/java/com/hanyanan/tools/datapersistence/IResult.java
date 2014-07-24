@@ -5,6 +5,5 @@ package com.hanyanan.tools.datapersistence;
  */
 public interface IResult<T> {
     public T getData();
-
     public DataError getDataError();
 }

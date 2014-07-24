@@ -12,6 +12,11 @@ public class DataError {
         mCode = code;
         mInfo = info;
     }
+
+    public DataError(String info){
+        mCode = FAILED;
+        mInfo = info;
+    }
     public int getErrorCode(){
         return mCode;
     }

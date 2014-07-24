@@ -3,6 +3,7 @@ package com.hanyanan.tools.datapersistence.storage;
 
 import com.hanyanan.tools.datapersistence.DataError;
 import com.hanyanan.tools.datapersistence.IAsyncObjectWorkStation;
+import com.hanyanan.tools.datapersistence.IAsyncResult;
 import com.hanyanan.tools.datapersistence.IObjectWorkStation;
 import com.hanyanan.tools.datapersistence.IResult;
 import com.hanyanan.tools.datapersistence.SimpleResult;
@@ -30,7 +31,8 @@ public class ObjectStreamStorage implements IAsyncObjectWorkStation, IObjectWork
     }
 
     @Override
-    public IResult put(final String key, final Serializable value) {
+    public IResult put(final String key, final Serializable value, final long expireTime) {
+        //TODO expireTime
         StreamStorageDriver.Editor editor = null;
         SimpleResult result = null;
         try {
@@ -47,7 +49,7 @@ public class ObjectStreamStorage implements IAsyncObjectWorkStation, IObjectWork
     }
 
     @Override
-    public void putAsync(String key, final Serializable content,IOnObjectResult listener) {
+    public void putAsync(String key, final Serializable content,IAsyncResult listener) {
         Task task = new Task(PUT, key,content, listener);
         service.execute(task);
     }
@@ -66,7 +68,7 @@ public class ObjectStreamStorage implements IAsyncObjectWorkStation, IObjectWork
     }
 
     @Override
-    public void removeAsync(String key, IOnObjectResult listener) {
+    public void removeAsync(String key, IAsyncResult listener) {
         Task task = new Task(REMOVE, key, listener);
         service.execute(task);
     }
@@ -91,7 +93,7 @@ public class ObjectStreamStorage implements IAsyncObjectWorkStation, IObjectWork
     }
 
     @Override
-    public void getAsync(String key, IOnObjectResult listener) {
+    public void getAsync(String key, IAsyncResult listener) {
         Task task = new Task(GET, key, listener);
         service.execute(task);
     }
@@ -100,14 +102,14 @@ public class ObjectStreamStorage implements IAsyncObjectWorkStation, IObjectWork
         private int mCommand;
         private String mKey;
         private Serializable mContent;
-        private IOnObjectResult mListener;
-        public Task(int command, String key, Serializable content, IOnObjectResult listener){
+        private IAsyncResult mListener;
+        public Task(int command, String key, Serializable content, IAsyncResult listener){
             mCommand = command;
             mListener = listener;
             mKey = key;
             mContent = content;
         }
-        public Task(int command, String key, IOnObjectResult listener){
+        public Task(int command, String key, IAsyncResult listener){
             mCommand = command;
             mListener = listener;
             mKey = key;
@@ -116,21 +118,21 @@ public class ObjectStreamStorage implements IAsyncObjectWorkStation, IObjectWork
         public void run() {
             switch (mCommand){
                 case PUT: {
-                    IResult result = put(mKey, mContent);
+                    IResult result = put(mKey, mContent, -1);
                     if (null == mListener) return;
-                    IOnObjectResult lis = (IOnObjectResult) mListener;
+                    IAsyncResult lis = mListener;
                     lis.onResult(mKey, result);
                     break;}
                 case GET:{
                     IResult result = get(mKey);
                     if (null == mListener) return;
-                    IOnObjectResult lis = (IOnObjectResult) mListener;
+                    IAsyncResult lis = mListener;
                     lis.onResult(mKey, result);
                     break;}
                 case REMOVE: {
                     IResult result = remove(mKey);
                     if (null == mListener) return;
-                    IOnObjectResult lis = (IOnObjectResult) mListener;
+                    IAsyncResult lis = mListener;
                     lis.onResult(mKey, result);
                     break;}
             }

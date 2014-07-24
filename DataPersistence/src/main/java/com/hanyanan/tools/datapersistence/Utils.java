@@ -2,7 +2,8 @@ package com.hanyanan.tools.datapersistence;
 
 import android.content.Context;
 
-import com.hanyanan.tools.datapersistence.storage.BaseType;
+import com.hanyanan.tools.datapersistence.storage.BaseDataParam;
+import com.hanyanan.tools.datapersistence.storage.BlobDataParam;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -84,9 +85,9 @@ public class Utils {
         return context.getDir(dir, 0);
     }
 
-    public static BaseType createBaseType(String data){
+    public static BaseDataParam createBaseParam(String data){
         final String con = data;
-        return new BaseType() {
+        return new BaseDataParam() {
             @Override
             public String getContent() {
                 return con;
@@ -98,8 +99,35 @@ public class Utils {
             }
         };
     }
+    public static BaseDataParam createBaseParam(String data, final long expireTime){
+        final String con = data;
+        return new BaseDataParam() {
+            @Override
+            public String getContent() {
+                return con;
+            }
 
+            @Override
+            public long getExpireTime() {
+                return expireTime;
+            }
+        };
+    }
 
+    public static BlobDataParam createBlobParam(byte[] data, final long expireTime){
+        final byte[] con = data;
+        return new BlobDataParam() {
+            @Override
+            public byte[]  getData() {
+                return con;
+            }
+
+            @Override
+            public long getExpireTime() {
+                return expireTime;
+            }
+        };
+    }
     public static byte[] serialize(Serializable content){
         try {
             ByteArrayOutputStream mem_out = new ByteArrayOutputStream();

@@ -2,6 +2,7 @@ package com.hanyanan.tools.datapersistence.storage;
 
 import android.text.TextUtils;
 
+import com.hanyanan.tools.datapersistence.DataError;
 import com.hanyanan.tools.datapersistence.IBaseDataWorkStation;
 import com.hanyanan.tools.datapersistence.IObjectWorkStation;
 import com.hanyanan.tools.datapersistence.IResult;
@@ -20,66 +21,67 @@ public class DatabaseStorage implements IBaseDataWorkStation, IObjectWorkStation
         mDBDriver = db;
     }
     @Override
-    public void put(String key, String value){
+    public IResult put(String key, String value, long expireTime){
+        long l = 0;
         if(isExists(key)){
-            mDBDriver.update(key, value);
+            l = mDBDriver.update(key, Utils.createBaseParam(value, expireTime));
         }else{
-            mDBDriver.insert(key, Utils.createBaseType(value));
+            l = mDBDriver.insert(key, Utils.createBaseParam(value, expireTime));
         }
+        if(l<=0){
+            return new SimpleResult(null, new DataError("Operation error."));
+        }
+        return new SimpleResult(null);
     }
 
     @Override
-    public void put(String key, int value) {
-        put(key, String.valueOf(value));
+    public IResult put(String key, int value, long expireTime) {
+        return put(key, String.valueOf(value), expireTime);
     }
 
     @Override
-    public void put(String key, float value) {
-        put(key, String.valueOf(value));
+    public IResult put(String key, float value, long expireTime) {
+        return put(key, String.valueOf(value), expireTime);
     }
 
     @Override
-    public void put(String key, double value) {
-        put(key, String.valueOf(value));
+    public IResult put(String key, double value, long expireTime) {
+        return put(key, String.valueOf(value), expireTime);
     }
 
     @Override
-    public void put(String key, byte value) {
-        put(key, String.valueOf(value));
+    public IResult put(String key, byte value, long expireTime) {
+        return put(key, String.valueOf(value), expireTime);
     }
 
     @Override
-    public void put(String key, long value) {
-        put(key, String.valueOf(value));
+    public IResult put(String key, long value, long expireTime) {
+        return put(key, String.valueOf(value), expireTime);
     }
 
     @Override
-    public void put(String key, short value) {
-        put(key, String.valueOf(value));
+    public IResult put(String key, short value, long expireTime) {
+        return put(key, String.valueOf(value), expireTime);
     }
 
     @Override
-    public void put(String key, char value) {
-        put(key, String.valueOf(value));
+    public IResult put(String key, char value, long expireTime) {
+        return put(key, String.valueOf(value), expireTime);
     }
 
     @Override
-    public void put(String key, final byte[] value){
+    public IResult put(String key, final byte[] value, long expireTime){
+        long i  = 0;
             byte[] data = getBlob(key);
             if(isExists(key)){
-                mDBDriver.update(key, value);
+                i = mDBDriver.update(key, Utils.createBlobParam(value, expireTime));
             }else{
-                mDBDriver.insert(key, new BlobType() {
-                    @Override
-                    public byte[] getData() {
-                        return value;
-                    }
-                    @Override
-                    public long getExpireTime() {
-                        return -1;
-                    }
-                });
+                i = mDBDriver.insert(key, Utils.createBlobParam(value, expireTime));
             }
+        if(i<=0){
+            return new SimpleResult(null, new DataError("Operation error."));
+        }
+        return new SimpleResult(null);
     }
 
     @Override
@@ -132,21 +134,17 @@ public class DatabaseStorage implements IBaseDataWorkStation, IObjectWorkStation
     }
 
     @Override
-    public IResult put(String key, Serializable value) {
+    public String getString(String key) {
+        return mDBDriver.getText(key);
+    }
+
+    @Override
+    public IResult put(String key, Serializable value, long expireTime) {
         final byte[] res = Utils.serialize(value);
         if(isExists(key)){
-            mDBDriver.update(key, res);
+            mDBDriver.update(key, Utils.createBlobParam(res, expireTime));
         }else{
-            mDBDriver.insert(key, new BlobType() {
-                @Override
-                public byte[] getData() {
-                    return res;
-                }
-                @Override
-                public long getExpireTime() {
-                    return -1;
-                }
-            });
+            mDBDriver.insert(key, Utils.createBlobParam(res, expireTime));
         }
 
         return new SimpleResult(null);
