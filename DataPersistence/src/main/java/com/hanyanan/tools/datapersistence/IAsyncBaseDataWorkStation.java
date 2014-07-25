@@ -16,13 +16,13 @@ public interface IAsyncBaseDataWorkStation {
     public void putAsync(String key, final String value, final long expire, IAsyncResult<String> result);
     public void putAsync(String key, final byte[] value, final long expire, IAsyncResult<byte[]> result);
 
-    public void getInt(String key, IAsyncResult<Integer> result);
-    public void getFloat(String key, IAsyncResult<Float> result);
-    public void getDouble(String key, IAsyncResult<Double> result);
-    public void getLong(String key, IAsyncResult<Long> result);
-    public void getByte(String key, IAsyncResult<Byte> result);
-    public void getChar(String key, IAsyncResult<Character> result);
-    public void getShort(String key, IAsyncResult<Short> result);
+    public void getInt(String key, int defaultValue,IAsyncResult<Integer> result);
+    public void getFloat(String key, float defaultValue, IAsyncResult<Float> result);
+    public void getDouble(String key, double defaultValue, IAsyncResult<Double> result);
+    public void getLong(String key, long defaultValue,IAsyncResult<Long> result);
+    public void getByte(String key, byte defaultValue, IAsyncResult<Byte> result);
+    public void getChar(String key, char defaultValue, IAsyncResult<Character> result);
+    public void getShort(String key, short defaultValue, IAsyncResult<Short> result);
     public void getString(String key, IAsyncResult<String> result);
     public void getBlob(String key, IAsyncResult<byte[]> result);
 

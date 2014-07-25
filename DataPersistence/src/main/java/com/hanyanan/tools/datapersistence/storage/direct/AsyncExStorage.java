@@ -1,4 +1,4 @@
-package com.hanyanan.tools.datapersistence.storage;
+package com.hanyanan.tools.datapersistence.storage.direct;
 
 import com.hanyanan.tools.datapersistence.Constant;
 import com.hanyanan.tools.datapersistence.IAsyncBaseDataWorkStation;
@@ -16,7 +16,6 @@ import java.util.concurrent.ExecutorService;
  */
 public final class AsyncExStorage implements IAsyncBaseDataWorkStation,
         IAsyncObjectWorkStation{
-    private static final String TAG = AsyncExStorage.class.getSimpleName();
     public final static ExecutorService service = Constant.service;
     private final IBaseDataWorkStation mBaseWorkStation;
     private final IObjectWorkStation mObjectWorkStation;
@@ -152,84 +151,91 @@ public final class AsyncExStorage implements IAsyncBaseDataWorkStation,
     }
 
     @Override
-    public void getInt(String key, IAsyncResult<Integer> result) {
+    public void getInt(String key, int defaultValue, IAsyncResult<Integer> result) {
         final String k = key;
         final IAsyncResult<Integer> r = result;
+        final int dv = defaultValue;
         Runnable runnable = new Runnable() {
             public void run() {
-                r.onResult(k, new SimpleResult<Integer>(mBaseWorkStation.getInt(k)));
+                r.onResult(k, new SimpleResult<Integer>(mBaseWorkStation.getInt(k,dv)));
             }
         };
         service.execute(runnable);
     }
 
     @Override
-    public void getFloat(String key, IAsyncResult<Float> result) {
+    public void getFloat(String key, float defaultValue, IAsyncResult<Float> result) {
         final String k = key;
         final IAsyncResult<Float> r = result;
+        final float dv = defaultValue;
         Runnable runnable = new Runnable() {
             public void run() {
-                r.onResult(k, new SimpleResult<Float>(mBaseWorkStation.getFloat(k)));
+                r.onResult(k, new SimpleResult<Float>(mBaseWorkStation.getFloat(k, dv)));
             }
         };
         service.execute(runnable);
     }
 
     @Override
-    public void getDouble(String key, IAsyncResult<Double> result) {
+    public void getDouble(String key, double defaultValue,IAsyncResult<Double> result) {
         final String k = key;
         final IAsyncResult<Double> r = result;
+        final double dv = defaultValue;
         Runnable runnable = new Runnable() {
             public void run() {
-                r.onResult(k, new SimpleResult<Double>(mBaseWorkStation.getDouble(k)));
+                r.onResult(k, new SimpleResult<Double>(mBaseWorkStation.getDouble(k,dv)));
             }
         };
         service.execute(runnable);
     }
 
     @Override
-    public void getLong(String key, IAsyncResult<Long> result) {
+    public void getLong(String key, long defaultValue, IAsyncResult<Long> result) {
         final String k = key;
         final IAsyncResult<Long> r = result;
+        final long dv = defaultValue;
         Runnable runnable = new Runnable() {
             public void run() {
-                r.onResult(k, new SimpleResult<Long>(mBaseWorkStation.getLong(k)));
+                r.onResult(k, new SimpleResult<Long>(mBaseWorkStation.getLong(k,dv)));
             }
         };
         service.execute(runnable);
     }
 
     @Override
-    public void getByte(String key, IAsyncResult<Byte> result) {
+    public void getByte(String key, byte defaultValue,IAsyncResult<Byte> result) {
         final String k = key;
         final IAsyncResult<Byte> r = result;
+        final byte dv = defaultValue;
         Runnable runnable = new Runnable() {
             public void run() {
-                r.onResult(k, new SimpleResult<Byte>(mBaseWorkStation.getByte(k)));
+                r.onResult(k, new SimpleResult<Byte>(mBaseWorkStation.getByte(k,dv)));
             }
         };
         service.execute(runnable);
     }
 
     @Override
-    public void getChar(String key, IAsyncResult<Character> result) {
+    public void getChar(String key, char defaultValue, IAsyncResult<Character> result) {
         final String k = key;
         final IAsyncResult<Character> r = result;
+        final char dv = defaultValue;
         Runnable runnable = new Runnable() {
             public void run() {
-                r.onResult(k, new SimpleResult<Character>(mBaseWorkStation.getChar(k)));
+                r.onResult(k, new SimpleResult<Character>(mBaseWorkStation.getChar(k,dv)));
             }
         };
         service.execute(runnable);
     }
 
     @Override
-    public void getShort(String key, IAsyncResult<Short> result) {
+    public void getShort(String key, short defaultValue,IAsyncResult<Short> result) {
         final String k = key;
         final IAsyncResult<Short> r = result;
+        final short dv = defaultValue;
         Runnable runnable = new Runnable() {
             public void run() {
-                r.onResult(k, new SimpleResult<Short>(mBaseWorkStation.getShort(k)));
+                r.onResult(k, new SimpleResult<Short>(mBaseWorkStation.getShort(k,dv)));
             }
         };
         service.execute(runnable);

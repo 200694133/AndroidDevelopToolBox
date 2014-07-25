@@ -14,13 +14,13 @@ public interface IBaseDataWorkStation {
     public IResult<String> put(String key, String value, long expireTime);
     public IResult<byte[]> put(String key, byte[] value, long expireTime);
 
-    public int getInt(String key);
-    public float getFloat(String key);
-    public double getDouble(String key);
-    public long getLong(String key);
-    public byte getByte(String key);
-    public char getChar(String key);
-    public short getShort(String key);
+    public int getInt(String key, int defaultValue);
+    public float getFloat(String key, float defaultValue);
+    public double getDouble(String key, double defaultValue);
+    public long getLong(String key, long defaultValue);
+    public byte getByte(String key, byte defaultValue);
+    public char getChar(String key, char defaultValue);
+    public short getShort(String key, short defaultValue);
     public byte[] getBlob(String key);
     public String getString(String key);
 

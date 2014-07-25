@@ -1,4 +1,4 @@
-package com.hanyanan.tools.datapersistence.storage;
+package com.hanyanan.tools.datapersistence.storage.stream;
 
 
 import com.hanyanan.tools.datapersistence.DataError;
@@ -49,12 +49,6 @@ public class ObjectStreamStorage implements IAsyncObjectWorkStation, IObjectWork
     }
 
     @Override
-    public void putAsync(String key, final Serializable content,IAsyncResult listener) {
-        Task task = new Task(PUT, key,content, listener);
-        service.execute(task);
-    }
-
-    @Override
     public IResult remove(String key) {
         SimpleResult result = null;
         try {
@@ -65,6 +59,12 @@ public class ObjectStreamStorage implements IAsyncObjectWorkStation, IObjectWork
             result = new SimpleResult(null, new DataError(DataError.FAILED, e.toString()));
         }
         return result;
+    }
+
+    @Override
+    public void putAsync(String key, Serializable value, long expireTime, IAsyncResult listener) {
+        Task task = new Task(PUT, key,value, listener);
+        service.execute(task);
     }
 
     @Override

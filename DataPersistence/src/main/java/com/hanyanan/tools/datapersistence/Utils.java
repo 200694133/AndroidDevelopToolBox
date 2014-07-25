@@ -2,8 +2,8 @@ package com.hanyanan.tools.datapersistence;
 
 import android.content.Context;
 
-import com.hanyanan.tools.datapersistence.storage.BaseDataParam;
-import com.hanyanan.tools.datapersistence.storage.BlobDataParam;
+import com.hanyanan.tools.datapersistence.storage.direct.BaseDataParam;
+import com.hanyanan.tools.datapersistence.storage.direct.BlobDataParam;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;

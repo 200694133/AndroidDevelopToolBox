@@ -1,4 +1,4 @@
-package com.hanyanan.tools.datapersistence.storage;
+package com.hanyanan.tools.datapersistence.storage.stream;
 
 import android.text.TextUtils;
 

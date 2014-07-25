@@ -1,4 +1,4 @@
-package com.hanyanan.tools.datapersistence.storage;
+package com.hanyanan.tools.datapersistence.storage.stream;
 
 /*
  * Copyright (C) 2012 The Android Open Source Project

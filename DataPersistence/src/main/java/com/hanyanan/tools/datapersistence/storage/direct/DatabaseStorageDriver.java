@@ -1,4 +1,4 @@
-package com.hanyanan.tools.datapersistence.storage;
+package com.hanyanan.tools.datapersistence.storage.direct;
 
 import android.content.Context;
 import android.database.Cursor;
@@ -6,7 +6,12 @@ import android.database.DatabaseErrorHandler;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.database.sqlite.SQLiteStatement;
+import android.text.TextUtils;
 import android.util.Log;
+
+import com.hanyanan.tools.datapersistence.filter.Filter;
+import com.hanyanan.tools.datapersistence.security.Security;
+import com.hanyanan.tools.datapersistence.storage.QueryResultEntry;
 
 
 /**
@@ -19,7 +24,6 @@ class DatabaseStorageDriver extends SQLiteOpenHelper {
     private static final String TABLE = "data_table";
     public static interface BaseColumns{
         public static final String KEY = "key";
-        public static final String CONTENT_TEXT = "content_text";
         public static final String CONTENT_BLOB = "content_blob";
         public static final String EXPIRE_TIME = "expire_time";
         public static final String TIME_STAMP = "time_stamp";
@@ -45,7 +49,6 @@ class DatabaseStorageDriver extends SQLiteOpenHelper {
         cmd.append("create table ").append(TABLE)
                 .append(" ( ")
                 .append(BaseColumns.KEY).append(" TEXT PRIMARY KEY,")
-                .append(BaseColumns.CONTENT_TEXT).append(" TEXT, ")
                 .append(BaseColumns.CONTENT_BLOB).append(" BLOB, ")
                 .append(BaseColumns.EXPIRE_TIME).append(" LONG NOT NULL, ")
                 .append(BaseColumns.TIME_STAMP).append(" LONG NOT NULL")
@@ -60,14 +63,19 @@ class DatabaseStorageDriver extends SQLiteOpenHelper {
             mInsertTextStatement = getWritableDatabase().compileStatement(
                     "INSERT INTO  " + TABLE + "("
                             + BaseColumns.KEY + ","
-                            + BaseColumns.CONTENT_TEXT + ","
+                            + BaseColumns.CONTENT_BLOB + ","
                             + BaseColumns.EXPIRE_TIME + ","
                             + BaseColumns.TIME_STAMP
                             + ") VALUES (?,?,?,?)");
 
         }
+        String s = content.getContent();
+        byte[] res = null;
+        if(!TextUtils.isEmpty(s)){
+            res = Security.encode(s.getBytes());
+        }
         mInsertTextStatement.bindString(1, key);
-        mInsertTextStatement.bindString(2, content.getContent());
+        mInsertTextStatement.bindBlob(2, res);
         mInsertTextStatement.bindLong(3, content.getExpireTime());
         mInsertTextStatement.bindLong(4, System.currentTimeMillis());
         return mInsertTextStatement.executeInsert();
@@ -85,22 +93,26 @@ class DatabaseStorageDriver extends SQLiteOpenHelper {
 
         }
         mInsertBlobStatement.bindString(1, key);
-        mInsertBlobStatement.bindBlob(2, blob.getData());
+        mInsertBlobStatement.bindBlob(2, Security.encode(blob.getData()));
         mInsertBlobStatement.bindLong(3, blob.getExpireTime());
         mInsertBlobStatement.bindLong(4, System.currentTimeMillis());
         return mInsertBlobStatement.executeInsert();
     }
 
     public String getText(final String key){
-        String sql = "select "+BaseColumns.CONTENT_TEXT+","+BaseColumns.EXPIRE_TIME+
+        String sql = "select "+BaseColumns.CONTENT_BLOB+","+BaseColumns.EXPIRE_TIME+
                 " from " + TABLE + " where "+BaseColumns.KEY + " = ? ";
         Cursor cursor = getReadableDatabase().rawQuery(sql, new String[]{key});
         if(cursor == null || cursor.isClosed() || !cursor.moveToFirst()) return null;
         if(cursor.moveToNext()){
             long et = cursor.getLong(cursor.getColumnIndex(BaseColumns.EXPIRE_TIME));
-            if(et > System.currentTimeMillis()) return null;
-            String data = cursor.getString(cursor.getColumnIndex(BaseColumns.CONTENT_TEXT));
-            return data;
+            byte data[] = cursor.getBlob(cursor.getColumnIndex(BaseColumns.CONTENT_BLOB));
+            et = Security.decode(et);
+            data = Security.decode(data);
+            if(null == data || !Filter.isIllegal(new QueryResultEntry(key,et,data))) {
+                return null;
+            }
+            return new String(data);
         }
         return null;
     }
@@ -112,9 +124,12 @@ class DatabaseStorageDriver extends SQLiteOpenHelper {
         if(cursor == null || cursor.isClosed() || !cursor.moveToFirst()) return null;
         if(cursor.moveToNext()){
             long et = cursor.getLong(cursor.getColumnIndex(BaseColumns.EXPIRE_TIME));
-            if(et > System.currentTimeMillis()) return null;
             byte[] data = cursor.getBlob(cursor.getColumnIndex(BaseColumns.CONTENT_BLOB));
-            return data;
+            et = Security.decode(et);
+            data = Security.decode(data);
+            if(Filter.isIllegal(new QueryResultEntry(key,et,data))) {
+                return data;
+            }
         }
         return null;
     }
@@ -132,11 +147,16 @@ class DatabaseStorageDriver extends SQLiteOpenHelper {
         if (mUpdateTextStatement == null) {
             mUpdateTextStatement = getWritableDatabase().compileStatement(
                     "UPDATE " + TABLE + " SET "
-                            + BaseColumns.CONTENT_TEXT + " = ? , "+BaseColumns.EXPIRE_TIME
+                            + BaseColumns.CONTENT_BLOB + " = ? , "+BaseColumns.EXPIRE_TIME
                             +" = ? WHERE "
                             + BaseColumns.KEY + " = ?");
         }
-        mUpdateTextStatement.bindString(1, content.getContent());
+        String s = content.getContent();
+        byte[] res = null;
+        if(!TextUtils.isEmpty(s)){
+            res = Security.encode(s.getBytes());
+        }
+        mUpdateTextStatement.bindBlob(1, res);
         mUpdateTextStatement.bindLong(2, content.getExpireTime());
         mUpdateTextStatement.bindString(3, key);
         return mUpdateTextStatement.executeUpdateDelete();
@@ -150,7 +170,7 @@ class DatabaseStorageDriver extends SQLiteOpenHelper {
                             +" = ? WHERE "
                             + BaseColumns.KEY + " = ?");
         }
-        mUpdateBlobStatement.bindBlob(1, param.getData());
+        mUpdateBlobStatement.bindBlob(1, Security.encode(param.getData()));
         mUpdateBlobStatement.bindLong(2, param.getExpireTime());
         mUpdateBlobStatement.bindString(3, key);
         return mUpdateBlobStatement.executeUpdateDelete();

@@ -13,7 +13,7 @@ public interface IObjectWorkStation {
      * @param expireTime expire time
      * @return stale value, null means that it's first time to insert
      */
-    public IResult put(String key, final Serializable value, final long expireTime);
+    public IResult<Serializable> put(String key, final Serializable value, final long expireTime);
 
     /**
      * remove object from storage
