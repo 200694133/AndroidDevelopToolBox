@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<merger version="2" >
+
+    <dataSet config="main" >
+        <source path="F:\MyWork\AndroidDevelopToolBox\volley\res" />
+        <source path="F:\MyWork\AndroidDevelopToolBox\volley\build\generated\res\rs\debug" />
+        <source path="F:\MyWork\AndroidDevelopToolBox\volley\build\generated\res\generated\debug" />
+    </dataSet>
+    <dataSet config="debug" >
+        <source path="F:\MyWork\AndroidDevelopToolBox\volley\src\debug\res" />
+    </dataSet>
+
+</merger>
