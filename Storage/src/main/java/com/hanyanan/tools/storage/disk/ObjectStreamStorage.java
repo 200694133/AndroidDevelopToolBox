@@ -19,9 +19,7 @@ import java.util.concurrent.Executors;
  * Created by hanyanan on 2014/7/18.
  */
 public class ObjectStreamStorage implements IAsyncObjectWorkStation, IObjectWorkStation {
-    private static final int PUT = 0x01;
-    private static final int REMOVE = 0x02;
-    private static final int GET = 0x03;
+
     private static final String TAG = ObjectStreamStorage.class.getSimpleName();
     private final FlexibleDiskStorage mFlexibleDiskStorage;
     private final static ExecutorService service = Executors.newSingleThreadExecutor();

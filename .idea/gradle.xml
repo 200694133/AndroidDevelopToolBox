@@ -10,7 +10,10 @@
             <option value="$PROJECT_DIR$" />
             <option value="$PROJECT_DIR$/Cache" />
             <option value="$PROJECT_DIR$/DataPersistence" />
+            <option value="$PROJECT_DIR$/Storage" />
+            <option value="$PROJECT_DIR$/XAynsTask" />
             <option value="$PROJECT_DIR$/app" />
+            <option value="$PROJECT_DIR$/volley" />
           </set>
         </option>
       </GradleProjectSettings>

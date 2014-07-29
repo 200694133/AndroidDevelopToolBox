@@ -2,10 +2,10 @@
 <merger version="2" >
 
     <dataSet config="main" >
-        <source path="F:\MyWork\AndroidDevelopToolBox\volley\assets" />
+        <source path="D:\MyWork\AndroidDevelopToolBox\volley\assets" />
     </dataSet>
     <dataSet config="debug" >
-        <source path="F:\MyWork\AndroidDevelopToolBox\volley\src\debug\assets" />
+        <source path="D:\MyWork\AndroidDevelopToolBox\volley\src\debug\assets" />
     </dataSet>
 
 </merger>

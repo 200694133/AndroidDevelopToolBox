@@ -5,7 +5,10 @@
       <module fileurl="file://$PROJECT_DIR$/AndroidDevelopToolBox.iml" filepath="$PROJECT_DIR$/AndroidDevelopToolBox.iml" />
       <module fileurl="file://$PROJECT_DIR$/Cache/Cache.iml" filepath="$PROJECT_DIR$/Cache/Cache.iml" />
       <module fileurl="file://$PROJECT_DIR$/DataPersistence/DataPersistence.iml" filepath="$PROJECT_DIR$/DataPersistence/DataPersistence.iml" />
+      <module fileurl="file://$PROJECT_DIR$/Storage/Storage.iml" filepath="$PROJECT_DIR$/Storage/Storage.iml" />
+      <module fileurl="file://$PROJECT_DIR$/XAynsTask/XAynsTask.iml" filepath="$PROJECT_DIR$/XAynsTask/XAynsTask.iml" />
       <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
+      <module fileurl="file://$PROJECT_DIR$/volley/volley.iml" filepath="$PROJECT_DIR$/volley/volley.iml" />
     </modules>
   </component>
 </project>

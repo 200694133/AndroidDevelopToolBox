@@ -93,6 +93,12 @@ public class FixSizeDiskStorage extends FlexibleDiskStorage{
         mCurrSize = 0;
     }
 
+    public long getCurrSize(){
+        return mCurrSize;
+    }
+    public long getMaxSize(){
+        return mMaxSize;
+    }
     private void trimToSizeIfNeed(){
         synchronized (this){
             if(mCurrSize > mMaxSize){
