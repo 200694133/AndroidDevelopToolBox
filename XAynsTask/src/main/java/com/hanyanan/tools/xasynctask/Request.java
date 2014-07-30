@@ -5,7 +5,7 @@ import android.os.Handler;
 /**
  * Created by hanyanan on 2014/7/29.
  */
-public class Request<T> implements Comparable<Request<T>>{
+public abstract class Request<T> implements Comparable<Request<T>>{
     /** Listener interface for errors. */
     private final Response.ErrorListener mErrorListener;
 
@@ -40,7 +40,7 @@ public class Request<T> implements Comparable<Request<T>>{
     private long mRequestBirthTime = 0;
     private Status mStatus = Status.IDLE;
     /** Current request executor. #{@see RequestExecutor.performRequest}. */
-    private final RequestExecutor<T> mRequestExecutor;
+    private final RequestExecutor mRequestExecutor;
     /** retry policy used to retry current request when request failed occurred. */
     private final RetryPolicy mRetryPolicy;
     /** used to delivery response. */
@@ -56,7 +56,7 @@ public class Request<T> implements Comparable<Request<T>>{
      * delivery of responses is provided by subclasses, who have a better idea of how to deliver
      * an already-parsed response.
      */
-    public Request(RequestExecutor<T> requestExecutor, ResponseDelivery responseDelivery,
+    public Request(RequestExecutor requestExecutor, ResponseDelivery responseDelivery,
                    RetryPolicy retryPolicy, Response.ErrorListener listener) {
         mErrorListener = listener;
         mResponseDelivery = responseDelivery;
@@ -67,7 +67,7 @@ public class Request<T> implements Comparable<Request<T>>{
 //        mDefaultTrafficStatsTag = findDefaultTrafficStatsTag(url);
     }
 
-    public Request(RequestExecutor<T> requestExecutor, Response.ErrorListener listener) {
+    public Request(RequestExecutor requestExecutor, Response.ErrorListener listener) {
         mErrorListener = listener;
         mResponseDelivery = new DefaultResponseDelivery(new Handler());
         mRequestExecutor = requestExecutor;
@@ -75,7 +75,7 @@ public class Request<T> implements Comparable<Request<T>>{
         mRequestBirthTime = System.currentTimeMillis();
         setStatus(Status.Pending);
     }
-    public RequestExecutor<T> getRequestExecutor(){
+    public RequestExecutor getRequestExecutor(){
         return mRequestExecutor;
     }
     public ResponseDelivery getResponseDelivery(){
@@ -195,6 +195,21 @@ public class Request<T> implements Comparable<Request<T>>{
         mResponseDelivery.postError(this,error);
     }
 
+    /**
+     * When exception occurred, retry to run this request
+     * @param exception the exception occurred.
+     * @return true means that is can retry again, false means it cannot retry.
+     */
+    protected boolean attemptRetryOnError(XError exception){
+        RetryPolicy policy = getRetryPolicy();
+        try {
+            policy.retry(exception);
+            return true;
+        }catch (XError error1){
+            addMarker("out of retry, finish failed!");
+            return false;
+        }
+    }
     /**
      * Our comparator sorts from high to low priority, and secondarily by
      * sequence number to provide FIFO ordering.

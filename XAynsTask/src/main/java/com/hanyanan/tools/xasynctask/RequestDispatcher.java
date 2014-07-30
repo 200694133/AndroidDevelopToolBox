@@ -84,12 +84,9 @@ public class RequestDispatcher extends Thread{
                 if(request.isCanceled()){
                     request.finish("discard-cancelled");
                 }else{
-                    RetryPolicy policy = request.getRetryPolicy();
-                    try {
-                        policy.retry(volleyError);
+                    if(request.attemptRetryOnError(volleyError)) {
                         mRequestQueue.add(request);
-                    }catch (XError error1){
-                        request.addMarker("out of retry, finish failed!");
+                    }else{
                         request.markDelivered();
                         request.getResponseDelivery().postError(request, volleyError);
                     }
