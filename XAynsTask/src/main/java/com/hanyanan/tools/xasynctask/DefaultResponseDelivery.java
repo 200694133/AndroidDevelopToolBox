@@ -89,17 +89,17 @@ public class DefaultResponseDelivery implements ResponseDelivery {
         @Override
         public void run() {
             // If this request has canceled, finish it and don't deliver.
-//            if (mRequest.isCanceled()) {
-//                mRequest.finish("canceled-at-delivery");
-//                return;
-//            }
-//
+            if (mRequest.isCanceled()) {
+                mRequest.finish("canceled-at-delivery");
+                return;
+            }
+
 //            // Deliver a normal response or error, depending.
-//            if (mResponse.isSuccess()) {
-//                mRequest.deliverResponse(mResponse.result);
-//            } else {
-//                mRequest.deliverError(mResponse.error);
-//            }
+            if (mResponse.isSuccess()) {
+                mRequest.deliverResponse(mResponse.result);
+            } else {
+                mRequest.deliverError(mResponse.error);
+            }
 //
 //            // If this is an intermediate response, add a marker, otherwise we're done
 //            // and the request can be finished.
@@ -109,10 +109,10 @@ public class DefaultResponseDelivery implements ResponseDelivery {
 //                mRequest.finish("done");
 //            }
 //
-//            // If we have been provided a post-delivery runnable, run it.
-//            if (mRunnable != null) {
-//                mRunnable.run();
-//            }
+            // If we have been provided a post-delivery runnable, run it.
+            if (mRunnable != null) {
+                mRunnable.run();
+            }
        }
     }
 }

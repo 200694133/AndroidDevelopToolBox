@@ -21,6 +21,8 @@ public class NetworkRequest<T> extends Request{
      */
     private static final String DEFAULT_PARAMS_ENCODING = "UTF-8";
 
+    private static final String DEFAULT_BODY_TYPE = "application/x-www-form-urlencoded; charset=";
+
     /**
      * Supported request methods.
      */
@@ -38,7 +40,7 @@ public class NetworkRequest<T> extends Request{
      * Request method of this request.  Currently supports GET, POST, PUT, DELETE, HEAD, OPTIONS,
      * TRACE, and PATCH.
      */
-    private final int mMethod;
+    private int mMethod = Method.GET;
 
     /** URL of this request. */
     private final String mUrl;
@@ -68,6 +70,9 @@ public class NetworkRequest<T> extends Request{
         this(url, Method.GET, new HashMap<String, String>(),requestExecutor,responseDelivery, listener);
     }
 
+    public void setMethod(int method){
+        mMethod = method;
+    }
 
     /**
      * Return the method for this request.  Can be one of the values in {@link Method}.
@@ -108,11 +113,19 @@ public class NetworkRequest<T> extends Request{
      * </ol>
      */
     public String getParamsEncoding() {
-        return DEFAULT_PARAMS_ENCODING;
+        return mParamEncoding;
     }
 
+    public void setPramsEncoding(String encoding){
+        mParamEncoding = encoding;
+    }
+    private String mParamEncoding = DEFAULT_PARAMS_ENCODING;
+    private String mBodyContentType = DEFAULT_BODY_TYPE;
+    public void setBodyContentType(String type){
+        mBodyContentType = type;
+    }
     public String getBodyContentType() {
-        return "application/x-www-form-urlencoded; charset=" + getParamsEncoding();
+        return mBodyContentType + getParamsEncoding();
     }
 
     public int getTimeoutMs(){

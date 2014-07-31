@@ -7,7 +7,8 @@ import android.os.Handler;
  */
 public abstract class Request<T> implements Comparable<Request<T>>{
     /** Listener interface for errors. */
-    private final Response.ErrorListener mErrorListener;
+    private Response.ErrorListener mErrorListener;
+    private Response.Listener<T> mResultListener;
 
     /** Sequence number of this request, used to enforce FIFO ordering. */
     private Integer mSequence;
@@ -86,6 +87,9 @@ public abstract class Request<T> implements Comparable<Request<T>>{
     }
     public Status getStatus(){
         return mStatus;
+    }
+    public void setListener(Response.Listener<T> l){
+        mResultListener = l;
     }
     public void finish(final String info){
         //TODO
@@ -180,7 +184,10 @@ public abstract class Request<T> implements Comparable<Request<T>>{
      * @param response The parsed response returned by
      */
     public void deliverResponse(T response){
-        mResponseDelivery.postResponse(this, Response.success(response));
+        if(null != mResultListener){
+            mResultListener.onResponse(response);
+        }
+        //TODO
     }
     /**
      * Delivers error message to the ErrorListener that the Request was
@@ -189,10 +196,10 @@ public abstract class Request<T> implements Comparable<Request<T>>{
      * @param error Error details
      */
     public void deliverError(XError error) {
-//        if (mErrorListener != null) {
-//            mErrorListener.onErrorResponse(error);
-//        }
-        mResponseDelivery.postError(this,error);
+        if (mErrorListener != null) {
+            mErrorListener.onErrorResponse(error);
+        }
+        //TODO
     }
 
     /**
