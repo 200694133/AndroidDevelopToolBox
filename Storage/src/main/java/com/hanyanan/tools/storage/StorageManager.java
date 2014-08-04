@@ -4,7 +4,10 @@ import android.content.Context;
 
 import com.hanyanan.tools.storage.db.DatabaseHelper;
 import com.hanyanan.tools.storage.db.DatabaseOperation;
+import com.hanyanan.tools.storage.disk.FixSizeDiskStorage;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.WeakHashMap;
 
 /**
@@ -28,11 +31,33 @@ public class StorageManager {
         return ot;
     }
 
+    public synchronized FixSizeDiskStorage getFixSizeDiskStorage(File root, long size) throws IOException {
+        return FixSizeDiskStorage.open(root,1,size);
+    }
 
+    public synchronized AsyncOperation getAsyncOperation(Context context, OperationTable ot){
+        if(ot.getType() == Type.DATABASE){
+            return new CommonAsyncOperation(ot.getOperation(context));
+        }else{
+            return null;//TODO
+        }
+    }
+
+    public synchronized Operation getOperation(Context context, OperationTable ot){
+        if(ot.getType() == Type.DATABASE){
+            return getDatabaseOperation(context, ot);
+        }else{
+            return null;//TODO
+        }
+    }
 
     private synchronized DatabaseOperation getDatabaseOperation(Context context, OperationTable ot){
         DatabaseHelper dh = new DatabaseHelper(context);
         DatabaseOperation dop = new DatabaseOperation(dh,ot);
         return dop;
+    }
+
+    public void dispose(){
+        //TODO
     }
 }

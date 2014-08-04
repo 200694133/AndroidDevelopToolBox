@@ -1,5 +1,7 @@
 package com.hanyanan.tools.storage;
 
+import android.content.Context;
+
 import java.lang.ref.WeakReference;
 
 /**
@@ -10,6 +12,8 @@ public class OperationTable {
     private Filter mFilter;
     private final Type mType;
     private WeakReference<StorageManager> mWeakRef;
+    private Operation mOperation = null;
+    private AsyncOperation mAsyncOperation = null;
     OperationTable(Type type,String tag){
         mType = type;
         mTag = tag;
@@ -26,12 +30,20 @@ public class OperationTable {
         return mWeakRef.get();
     }
 
-    public Operation getOperation(){
-        return null;//TODO
+    public Operation getOperation(Context context){
+        if(null != mOperation) return mOperation;
+        StorageManager sm = getStorageManager();
+        if(null == sm) return null;
+        mOperation =  sm.getOperation(context,this);
+        return mOperation;
     }
 
-    public AsyncOperation getAsyncOperation(){
-        return null;//TODO
+    public AsyncOperation getAsyncOperation(Context context){
+        if(null != mAsyncOperation) return mAsyncOperation;
+        StorageManager sm = getStorageManager();
+        if(null == sm) return null;
+        mAsyncOperation = sm.getAsyncOperation(context,this);
+        return mAsyncOperation;
     }
 
     public static <T> Entry<T> deliveryEntry(OperationTable table, String key, T data, long et,Encoder<T> encoder){
