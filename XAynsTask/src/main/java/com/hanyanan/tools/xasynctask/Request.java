@@ -49,7 +49,11 @@ public abstract class Request<T> implements Comparable<Request<T>>{
     /** An opaque token tagging this request; used for bulk cancellation. */
     private Object mTag;
 
+    /** The priority of this request. */
     private Priority mPriority;
+
+    /** The cache policy of this request to indicate if need cache the terminal response. */
+    private CachePolicy mCachePolicy;
 
     /**
      * Creates a new request with the given RequestExecutor, RetryPolicy, ResponseDelivery and
@@ -106,6 +110,20 @@ public abstract class Request<T> implements Comparable<Request<T>>{
         isCanceled = true;
     }
 
+    /**
+     * Setup this request to reuse this request.
+     */
+    public void reset(){
+        //TODO
+    }
+
+    public void setCachePolicy(CachePolicy cachePolicy){
+        mCachePolicy = cachePolicy;
+    }
+
+    public CachePolicy getCachePolicy(){
+        return mCachePolicy;
+    }
     /**
      * Set a tag on this request. Can be used to cancel all requests with this
      * tag by {@link RequestQueue#cancelAll(Object)}.

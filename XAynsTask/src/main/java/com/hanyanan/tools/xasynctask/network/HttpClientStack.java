@@ -18,6 +18,7 @@ package com.hanyanan.tools.xasynctask.network;
 
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
+import org.apache.http.HttpStatus;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpDelete;
@@ -34,6 +35,7 @@ import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.params.HttpConnectionParams;
 import org.apache.http.params.HttpParams;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
@@ -71,6 +73,28 @@ public class HttpClientStack implements HttpStack {
         HttpConnectionParams.setConnectionTimeout(httpParams, 5000);
         HttpConnectionParams.setSoTimeout(httpParams, timeoutMs);
         return mClient.execute(httpRequest);
+    }
+
+    @Override
+    public InputStream performStreamRequest(NetworkRequest<?> request,
+               Map<String, String> additionalHeaders) throws IOException, AuthFailureError {
+
+        HttpUriRequest httpRequest = createHttpRequest(request, additionalHeaders);
+        addHeaders(httpRequest, additionalHeaders);
+//        addHeaders(httpRequest, request.getHeaders());
+        onPrepareRequest(httpRequest);
+        HttpParams httpParams = httpRequest.getParams();
+        int timeoutMs = request.getTimeoutMs();
+        // TODO: Reevaluate this connection timeout based on more wide-scale
+        // data collection and possibly different for wifi vs. 3G.
+        HttpConnectionParams.setConnectionTimeout(httpParams, 5000);
+        HttpConnectionParams.setSoTimeout(httpParams, timeoutMs);
+        HttpResponse response = mClient.execute(httpRequest);
+        if (response.getStatusLine().getStatusCode() == HttpStatus.SC_OK) {
+            InputStream is = response.getEntity().getContent();
+            return is;
+        }
+        return null;
     }
 
     /**

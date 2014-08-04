@@ -1,8 +1,5 @@
 package com.hanyanan.tools.storage.disk;
 
-import android.content.Entity;
-import android.os.SystemClock;
-
 import com.hanyanan.tools.storage.StorageLog;
 import com.hanyanan.tools.storage.Utils;
 
@@ -17,7 +14,7 @@ import java.util.Map;
 /**
  * Created by hanyanan on 2014/7/28.
  */
-public class FixSizeDiskStorage extends FlexibleDiskStorage{
+public class FixSizeDiskStorage extends FlexibleDiskStorage {
     private final static long DEFAULT_MAX_SIZE = 1024 * 1024 * 10;//10M
 
     private final long mMaxSize;

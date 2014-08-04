@@ -1,6 +1,9 @@
 package com.hanyanan.tools.storage;
 
 import android.content.Context;
+
+import com.hanyanan.tools.storage.Error.TypeNotSupportError;
+
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
@@ -14,6 +17,8 @@ import java.io.Serializable;
 import java.io.StreamCorruptedException;
 import java.io.StringWriter;
 import java.nio.charset.Charset;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 /**
  * Created by hanyanan on 2014/7/8.
@@ -25,6 +30,9 @@ public class Utils {
     public static final Charset ASCII_CHARSET = Charset.forName("US-ASCII");
     public static final Charset UTF8_CHARSET = Charset.forName("UTF-8");
     public static final Charset ISO_8859_1_CHARSET = Charset.forName("ISO-8859-1");
+    public static final ExecutorService executorService = Executors.newSingleThreadExecutor();
+
+
     private Utils() {
         throw new UnsupportedOperationException("");
     }
@@ -84,7 +92,15 @@ public class Utils {
         return context.getDir(dir, 0);
     }
 
-    public static byte[] serialize(Serializable content){
+    public static byte[] serialize(Object content) throws TypeNotSupportError {
+        if(content instanceof byte[]){
+            return (byte[])content;
+        }
+
+        if(!(content instanceof Serializable)){
+            throw new TypeNotSupportError(""+content.getClass()+" cannot Serializable");
+        }
+
         try {
             ByteArrayOutputStream mem_out = new ByteArrayOutputStream();
             ObjectOutputStream out = new ObjectOutputStream(mem_out);
@@ -101,7 +117,7 @@ public class Utils {
         }
     }
 
-    public static Serializable deSerialize(byte[] bytes){
+    public static Serializable deSerialize(byte[] bytes) throws ClassNotFoundException{
         try {
             ByteArrayInputStream mem_in = new ByteArrayInputStream(bytes);
             ObjectInputStream in = new ObjectInputStream(mem_in);
@@ -114,10 +130,12 @@ public class Utils {
             return content;
         } catch (StreamCorruptedException e) {
             return null;
-        } catch (ClassNotFoundException e) {
-            return null;
-        }   catch (IOException e) {
+        } catch (IOException e) {
             return null;
         }
+    }
+
+    public static String generatorKey(String primaryKey, String secondaryKey){
+        return primaryKey+"_"+secondaryKey;
     }
 }

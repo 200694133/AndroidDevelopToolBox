@@ -121,6 +121,51 @@ public class HurlStack implements HttpStack {
         return response;
     }
 
+    @Override
+    public InputStream performStreamRequest(NetworkRequest<?> request,
+                   Map<String, String> additionalHeaders) throws IOException, AuthFailureError {
+        String url = request.getUrl();
+        HashMap<String, String> map = new HashMap<String, String>();
+        map.putAll(additionalHeaders);
+        if (mUrlRewriter != null) {
+            String rewritten = mUrlRewriter.rewriteUrl(url);
+            if (rewritten == null) {
+                throw new IOException("URL blocked by rewriter: " + url);
+            }
+            url = rewritten;
+        }
+        URL parsedUrl = new URL(url);
+        HttpURLConnection connection = openConnection(parsedUrl, request);
+        for (String headerName : map.keySet()) {
+            connection.addRequestProperty(headerName, map.get(headerName));
+        }
+        setConnectionParametersForRequest(connection, request);
+        ProtocolVersion protocolVersion = new ProtocolVersion("HTTP", 1, 1);
+        int responseCode = connection.getResponseCode();
+        if (responseCode == -1) {
+            // -1 is returned by getResponseCode() if the response code could not be retrieved.
+            // Signal to the caller that something was wrong with the connection.
+            throw new IOException("Could not retrieve response code from HttpUrlConnection.");
+        }
+        StatusLine responseStatus = new BasicStatusLine(protocolVersion,
+                connection.getResponseCode(), connection.getResponseMessage());
+        BasicHttpResponse response = new BasicHttpResponse(responseStatus);
+        for (Entry<String, List<String>> header : connection.getHeaderFields().entrySet()) {
+            if (header.getKey() != null) {
+                Header h = new BasicHeader(header.getKey(), header.getValue().get(0));
+                response.addHeader(h);
+            }
+        }
+
+        InputStream inputStream;
+        try {
+            inputStream = connection.getInputStream();
+            return inputStream;
+        } catch (IOException ioe) {
+            return null;
+        }
+    }
+
     /**
      * Initializes an {@link org.apache.http.HttpEntity} from the given {@link java.net.HttpURLConnection}.
      * @param connection

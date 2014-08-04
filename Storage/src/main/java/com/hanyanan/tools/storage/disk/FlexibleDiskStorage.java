@@ -3,16 +3,15 @@ package com.hanyanan.tools.storage.disk;
 import android.text.TextUtils;
 
 import com.hanyanan.tools.storage.Error.BusyInUsingError;
+import com.hanyanan.tools.storage.IStreamStorage;
 import com.hanyanan.tools.storage.Utils;
 
 import java.io.BufferedWriter;
-import java.io.Closeable;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileWriter;
-import java.io.FilterOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -28,7 +27,7 @@ import java.util.regex.Pattern;
 /**
  * Created by hanyanan on 2014/7/14.
  */
-class FlexibleDiskStorage {
+class FlexibleDiskStorage implements IStreamStorage {
     private enum Action{
         DIRTY_ACTION("DIRTY"),
         CLEAN_ACTION("CLEAN"),
@@ -441,11 +440,11 @@ class FlexibleDiskStorage {
     }
 
     /** A snapshot of the values for an entry. */
-    public class Snapshot implements Closeable {
+    public class SnapshotImpl implements Snapshot {
         private final Entry entry;
         private final long lengths;
         private InputStream inputStream;
-        private Snapshot(Entry entry, long lengths) {
+        private SnapshotImpl(Entry entry, long lengths) {
             this.entry = entry;
             this.lengths = lengths;
         }
@@ -528,13 +527,8 @@ class FlexibleDiskStorage {
             return isIllegal;
         }
     }
-    private static final OutputStream NULL_OUTPUT_STREAM = new OutputStream() {
-        @Override
-        public void write(int b) throws IOException {
-            // Eat all writes silently. Nom nom.
-        }
-    };
-    public final class Editor{
+
+    public final class Editor implements IStreamStorage.Editor {
         private final Entry entry;
         private boolean isWritten = false;
         private boolean hasErrors = false;
@@ -574,74 +568,37 @@ class FlexibleDiskStorage {
                         outputStream = new FileOutputStream(dirtyFile);
                     } catch (Exception e2) {
                         // We are unable to recover. Silently eat the writes.
-                        return NULL_OUTPUT_STREAM;
+                        return IStreamStorage.NULL_OUTPUT_STREAM;
                     }
                 }
-                return new FaultHidingOutputStream(outputStream);
+                return new IStreamStorage.FaultHidingOutputStream(outputStream,this);
             }
         }
 
-        public void setContent(byte[] content) throws IOException {
-            OutputStream outputStream = newOutputStream();
-            outputStream.write(content);
-            outputStream.flush();
-            commit();
-            Utils.closeQuietly(outputStream);
+        @Override
+        public InputStream newInputStream() {
+            synchronized (FlexibleDiskStorage.this){
+                if (entry.currentEditor != this) {
+                    throw new IllegalStateException();
+                }
+                if (!entry.readable || this.isWritten) {
+                    return null;
+                }
+                try {
+                    return new FileInputStream(entry.getCleanFile());
+                } catch (Exception e) {
+                    return null;
+                }
+            }
         }
-//        public SafeFileInputStream newInputStream(){
-//            synchronized (StreamDataPersistence.this){
-//                if (entry.currentEditor != this) {
-//                    throw new IllegalStateException();
-//                }
-//                if (!entry.readable || this.isWritten) {
-//                    return null;
-//                }
-//                try {
-//                    return new SafeFileInputStream(entry.getCleanFile());
-//                } catch (Exception e) {
-//                    return null;
-//                }
-//            }
-//        }
+
         public void close(){
 
         }
-        private class FaultHidingOutputStream extends FilterOutputStream {
-            private FaultHidingOutputStream(OutputStream out) {
-                super(out);
-            }
 
-            @Override public void write(int oneByte) {
-                try {
-                    out.write(oneByte);
-                } catch (IOException e) {
-                    hasErrors = true;
-                }
-            }
-
-            @Override public void write(byte[] buffer, int offset, int length) {
-                try {
-                    out.write(buffer, offset, length);
-                } catch (IOException e) {
-                    hasErrors = true;
-                }
-            }
-
-            @Override public void close() {
-                try {
-                    out.close();
-                } catch (IOException e) {
-                    hasErrors = true;
-                }
-            }
-
-            @Override public void flush() {
-                try {
-                    out.flush();
-                } catch (IOException e) {
-                    hasErrors = true;
-                }
-            }
+        @Override
+        public void setHasError(boolean error) {
+            hasErrors = error;
         }
     }
     protected final class Entry {
@@ -658,7 +615,7 @@ class FlexibleDiskStorage {
         private final List<Snapshot> currSnapshots = new ArrayList<Snapshot>();
 
         private Snapshot newSnapshot(){
-            Snapshot s = new Snapshot(this,length){
+            Snapshot s = new SnapshotImpl(this,length){
                 public void close() {
                     super.close();
                     currSnapshots.remove(this);

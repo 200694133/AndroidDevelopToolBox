@@ -1,6 +1,5 @@
 package com.hanyanan.tools.xasynctask;
 
-import android.os.*;
 import android.os.Process;
 
 import java.util.concurrent.BlockingQueue;
@@ -18,6 +17,8 @@ public class RequestDispatcher extends Thread{
     /** Used for telling us to die. */
     private volatile boolean mQuit = false;
 
+    private final Cache mCache;
+
     /**
      * Creates a new network dispatcher thread.  You must call {@link #start()}
      * in order to begin processing.
@@ -25,9 +26,10 @@ public class RequestDispatcher extends Thread{
      * @param queue Queue of incoming requests for triage
      * @param delivery Default delivery interface to use for posting responses
      */
-    public RequestDispatcher(BlockingQueue<Request<?>> queue,
+    public RequestDispatcher(BlockingQueue<Request<?>> queue,Cache cache,
                              ResponseDelivery delivery) {
         mRequestQueue = queue;
+        mCache = cache;
         mDefaultDelivery = delivery;
     }
     /**
@@ -70,15 +72,28 @@ public class RequestDispatcher extends Thread{
                 // Perform the network request.
 //                NetworkResponse networkResponse = mNetwork.performRequest(request);
 //                request.addMarker("network-http-complete");
-
+                CachePolicy cachePolicy = request.getCachePolicy();
                 RequestExecutor re  = request.getRequestExecutor();
                 ResponseDelivery rd = request.getResponseDelivery();
+
+                //try get from cache
+                if(cachePolicy!=null && !cachePolicy.skipCache() && cachePolicy.canReadFromCache()){
+                    //TODO
+                    request.addMarker("read-cache-complete");
+                    return;
+                }
+
                 Response response = re.performRequest(request);
                 request.addMarker("request-complete");
                 // Post the response back.
-                request.markDelivered();
-//                mDelivery.postResponse(request, response);
                 rd.postResponse(request, response);
+                request.markDelivered();
+                //check if need to insert to cache.
+                if (null != cachePolicy && !cachePolicy.skipCache() && cachePolicy.shouldCache()) {
+                    //mCache.put(cachePolicy.getCacheKey(), response.cacheEntry);
+                    //TODO
+                    request.addMarker("network-cache-written");
+                }
             } catch (XError volleyError) {
 //                parseAndDeliverNetworkError(request, volleyError);
                 if(request.isCanceled()){

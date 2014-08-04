@@ -22,6 +22,7 @@ import com.hanyanan.tools.xasynctask.Request;
 import org.apache.http.HttpResponse;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.Map;
 
 /**
@@ -41,4 +42,6 @@ public interface HttpStack {
     public HttpResponse performRequest(NetworkRequest<?> request, Map<String, String> additionalHeaders)
         throws IOException, AuthFailureError;
 
+    public InputStream performStreamRequest(NetworkRequest<?> request, Map<String, String> additionalHeaders)
+            throws IOException, AuthFailureError;
 }

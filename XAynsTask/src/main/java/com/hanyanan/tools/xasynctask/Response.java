@@ -40,7 +40,6 @@ public class Response<T> {
 
     /** Detailed error information if <code>errorCode != OK</code>. */
     public final XError error;
-
     /**
      * Returns whether this response is considered successful.
      */

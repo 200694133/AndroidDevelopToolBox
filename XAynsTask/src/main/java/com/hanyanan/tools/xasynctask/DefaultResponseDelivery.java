@@ -57,14 +57,14 @@ public class DefaultResponseDelivery implements ResponseDelivery {
 
     @Override
     public void postResponse(Request<?> request, Response<?> response, Runnable runnable) {
-//        request.markDelivered();
-//        request.addMarker("post-response");
+        request.markDelivered();
+        request.addMarker("post-response");
         mResponsePoster.execute(new ResponseDeliveryRunnable(request, response, runnable));
     }
 
     @Override
     public void postError(Request<?> request, XError error) {
-//        request.addMarker("post-error");
+        request.addMarker("post-error");
         Response<?> response = Response.error(error);
         mResponsePoster.execute(new ResponseDeliveryRunnable(request, response, null));
     }

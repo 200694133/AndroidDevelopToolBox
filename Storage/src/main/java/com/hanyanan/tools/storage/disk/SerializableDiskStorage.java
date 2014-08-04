@@ -1,7 +1,6 @@
 package com.hanyanan.tools.storage.disk;
 
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 /**
  * Created by hanyanan on 2014/7/29.

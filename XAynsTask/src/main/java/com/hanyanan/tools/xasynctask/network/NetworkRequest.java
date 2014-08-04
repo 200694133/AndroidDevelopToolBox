@@ -19,9 +19,9 @@ public class NetworkRequest<T> extends Request{
     /**
      * Default encoding for POST or PUT parameters. See {@link #getParamsEncoding()}.
      */
-    private static final String DEFAULT_PARAMS_ENCODING = "UTF-8";
+    protected static final String DEFAULT_PARAMS_ENCODING = "UTF-8";
 
-    private static final String DEFAULT_BODY_TYPE = "application/x-www-form-urlencoded; charset=";
+    protected static final String DEFAULT_BODY_TYPE = "application/x-www-form-urlencoded; charset=";
 
     /**
      * Supported request methods.
@@ -40,12 +40,12 @@ public class NetworkRequest<T> extends Request{
      * Request method of this request.  Currently supports GET, POST, PUT, DELETE, HEAD, OPTIONS,
      * TRACE, and PATCH.
      */
-    private int mMethod = Method.GET;
+    protected int mMethod = Method.GET;
 
     /** URL of this request. */
-    private final String mUrl;
+    protected final String mUrl;
     /** Threshold at which we should log the request (even when debug logging is not enabled). */
-    private static final long SLOW_REQUEST_THRESHOLD_MS = 3000;
+    protected static final long SLOW_REQUEST_THRESHOLD_MS = 3000;
     protected HashMap<String, String> mParams;
     /**
      * Creates a new request with the given method (one of the values from {@link Method}),
