@@ -15,6 +15,10 @@ public class OperationTable {
         mTag = tag;
     }
 
+    public String getTag(){
+        return mTag;
+    }
+
     public void setStorageManager(StorageManager sm){
         mWeakRef = new WeakReference<StorageManager>(sm);
     }

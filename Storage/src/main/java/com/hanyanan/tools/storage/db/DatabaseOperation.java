@@ -4,7 +4,7 @@ import com.hanyanan.tools.storage.Entry;
 import com.hanyanan.tools.storage.Error.*;
 import com.hanyanan.tools.storage.Error.Error;
 import com.hanyanan.tools.storage.Operation;
-import com.hanyanan.tools.storage.OperationSet;
+import com.hanyanan.tools.storage.OperationTable;
 import com.hanyanan.tools.storage.Result;
 
 import java.io.Closeable;
@@ -22,10 +22,10 @@ import java.util.Set;
  */
 public final class DatabaseOperation implements Operation,Closeable {
     private final DatabaseHelper mDB;
-    private final OperationSet mOperationSet;
-    public DatabaseOperation(DatabaseHelper db,OperationSet operationSet){
+    private final OperationTable mOperations;
+    public DatabaseOperation(DatabaseHelper db,OperationTable operationSet){
         mDB = db;
-        mOperationSet = operationSet;
+        mOperations = operationSet;
     }
 
     public void close(){
@@ -53,7 +53,7 @@ public final class DatabaseOperation implements Operation,Closeable {
     @Override
     public Result<Integer> put(String key, int value, long expireTime) {
         Entry<Integer> entry = new Entry<Integer>();
-        entry.mPrimaryKey = mOperationSet.getPrimaryKey();
+        entry.mPrimaryKey = mOperations.getTag();
         entry.mSecondaryKey = key;
         entry.mData = Integer.valueOf(value);
         entry.mExpireTime = expireTime;
@@ -67,7 +67,7 @@ public final class DatabaseOperation implements Operation,Closeable {
     @Override
     public Result<Float> put(String key, float value, long expireTime) {
         Entry<Float> entry = new Entry<Float>();
-        entry.mPrimaryKey = mOperationSet.getPrimaryKey();
+        entry.mPrimaryKey = mOperations.getTag();
         entry.mSecondaryKey = key;
         entry.mData = Float.valueOf(value);
         entry.mExpireTime = expireTime;
@@ -81,7 +81,7 @@ public final class DatabaseOperation implements Operation,Closeable {
     @Override
     public Result<Double> put(String key, double value, long expireTime) {
         Entry<Double> entry = new Entry<Double>();
-        entry.mPrimaryKey = mOperationSet.getPrimaryKey();
+        entry.mPrimaryKey = mOperations.getTag();
         entry.mSecondaryKey = key;
         entry.mData = Double.valueOf(value);
         entry.mExpireTime = expireTime;
@@ -95,7 +95,7 @@ public final class DatabaseOperation implements Operation,Closeable {
     @Override
     public Result<Byte> put(String key, byte value, long expireTime) {
         Entry<Byte> entry = new Entry<Byte>();
-        entry.mPrimaryKey = mOperationSet.getPrimaryKey();
+        entry.mPrimaryKey = mOperations.getTag();
         entry.mSecondaryKey = key;
         entry.mData = Byte.valueOf(value);
         entry.mExpireTime = expireTime;
@@ -109,7 +109,7 @@ public final class DatabaseOperation implements Operation,Closeable {
     @Override
     public Result<Long> put(String key, long value, long expireTime) {
         Entry<Long> entry = new Entry<Long>();
-        entry.mPrimaryKey = mOperationSet.getPrimaryKey();
+        entry.mPrimaryKey = mOperations.getTag();
         entry.mSecondaryKey = key;
         entry.mData = Long.valueOf(value);
         entry.mExpireTime = expireTime;
@@ -123,7 +123,7 @@ public final class DatabaseOperation implements Operation,Closeable {
     @Override
     public Result<Short> put(String key, short value, long expireTime) {
         Entry<Short> entry = new Entry<Short>();
-        entry.mPrimaryKey = mOperationSet.getPrimaryKey();
+        entry.mPrimaryKey = mOperations.getTag();
         entry.mSecondaryKey = key;
         entry.mData = Short.valueOf(value);
         entry.mExpireTime = expireTime;
@@ -137,7 +137,7 @@ public final class DatabaseOperation implements Operation,Closeable {
     @Override
     public Result<Character> put(String key, char value, long expireTime) {
         Entry<Character> entry = new Entry<Character>();
-        entry.mPrimaryKey = mOperationSet.getPrimaryKey();
+        entry.mPrimaryKey = mOperations.getTag();
         entry.mSecondaryKey = key;
         entry.mData = Character.valueOf(value);
         entry.mExpireTime = expireTime;
@@ -151,7 +151,7 @@ public final class DatabaseOperation implements Operation,Closeable {
     @Override
     public Result<String> put(String key, String value, long expireTime) {
         Entry<String> entry = new Entry<String>();
-        entry.mPrimaryKey = mOperationSet.getPrimaryKey();
+        entry.mPrimaryKey = mOperations.getTag();
         entry.mSecondaryKey = key;
         entry.mData = value;
         entry.mExpireTime = expireTime;
@@ -165,7 +165,7 @@ public final class DatabaseOperation implements Operation,Closeable {
     @Override
     public Result<byte[]> put(String key, byte[] value, long expireTime) {
         Entry<byte[]> entry = new Entry<byte[]>();
-        entry.mPrimaryKey = mOperationSet.getPrimaryKey();
+        entry.mPrimaryKey = mOperations.getTag();
         entry.mSecondaryKey = key;
         entry.mData = value;
         entry.mExpireTime = expireTime;
@@ -179,7 +179,7 @@ public final class DatabaseOperation implements Operation,Closeable {
     @Override
     public Result<Serializable> put(String key, Serializable value, long expireTime) {
         Entry<Serializable> entry = new Entry<Serializable>();
-        entry.mPrimaryKey = mOperationSet.getPrimaryKey();
+        entry.mPrimaryKey = mOperations.getTag();
         entry.mSecondaryKey = key;
         entry.mData = value;
         entry.mExpireTime = expireTime;
@@ -215,8 +215,8 @@ public final class DatabaseOperation implements Operation,Closeable {
     @Override
     public int getInt(String key, int defaultValue) {
         try {
-            Entry<Integer> entry = mDB.get(mOperationSet.getPrimaryKey(),key,Integer.class);
-            if(null != mOperationSet.getFilter() && mOperationSet.getFilter().isValid(entry)){
+            Entry<Integer> entry = mDB.get(mOperations.getTag(),key,Integer.class);
+            if(null != mOperations.getFilter() && mOperations.getFilter().isValid(entry)){
                 return entry.mData;
             }
         } catch (ClassNotFoundException e) {
@@ -229,8 +229,8 @@ public final class DatabaseOperation implements Operation,Closeable {
     @Override
     public float getFloat(String key, float defaultValue) {
         try {
-            Entry<Float> entry = mDB.get(mOperationSet.getPrimaryKey(),key,Float.class);
-            if(null != mOperationSet.getFilter() && mOperationSet.getFilter().isValid(entry)){
+            Entry<Float> entry = mDB.get(mOperations.getTag(),key,Float.class);
+            if(null != mOperations.getFilter() && mOperations.getFilter().isValid(entry)){
                 return entry.mData;
             }
         } catch (ClassNotFoundException e) {
@@ -242,8 +242,8 @@ public final class DatabaseOperation implements Operation,Closeable {
     @Override
     public double getDouble(String key, double defaultValue) {
         try {
-            Entry<Double> entry = mDB.get(mOperationSet.getPrimaryKey(),key,Double.class);
-            if(null != mOperationSet.getFilter() && mOperationSet.getFilter().isValid(entry)){
+            Entry<Double> entry = mDB.get(mOperations.getTag(),key,Double.class);
+            if(null != mOperations.getFilter() && mOperations.getFilter().isValid(entry)){
                 return entry.mData;
             }
         } catch (ClassNotFoundException e) {
@@ -255,8 +255,8 @@ public final class DatabaseOperation implements Operation,Closeable {
     @Override
     public long getLong(String key, long defaultValue) {
         try {
-            Entry<Long> entry = mDB.get(mOperationSet.getPrimaryKey(),key,Long.class);
-            if(null != mOperationSet.getFilter() && mOperationSet.getFilter().isValid(entry)){
+            Entry<Long> entry = mDB.get(mOperations.getTag(),key,Long.class);
+            if(null != mOperations.getFilter() && mOperations.getFilter().isValid(entry)){
                 return entry.mData;
             }
         } catch (ClassNotFoundException e) {
@@ -268,8 +268,8 @@ public final class DatabaseOperation implements Operation,Closeable {
     @Override
     public byte getByte(String key, byte defaultValue) {
         try {
-            Entry<Byte> entry = mDB.get(mOperationSet.getPrimaryKey(),key,Byte.class);
-            if(null != mOperationSet.getFilter() && mOperationSet.getFilter().isValid(entry)){
+            Entry<Byte> entry = mDB.get(mOperations.getTag(),key,Byte.class);
+            if(null != mOperations.getFilter() && mOperations.getFilter().isValid(entry)){
                 return entry.mData;
             }
         } catch (ClassNotFoundException e) {
@@ -281,8 +281,8 @@ public final class DatabaseOperation implements Operation,Closeable {
     @Override
     public char getChar(String key, char defaultValue) {
         try {
-            Entry<Character> entry = mDB.get(mOperationSet.getPrimaryKey(),key,Character.class);
-            if(null != mOperationSet.getFilter() && mOperationSet.getFilter().isValid(entry)){
+            Entry<Character> entry = mDB.get(mOperations.getTag(),key,Character.class);
+            if(null != mOperations.getFilter() && mOperations.getFilter().isValid(entry)){
                 return entry.mData;
             }
         } catch (ClassNotFoundException e) {
@@ -294,8 +294,8 @@ public final class DatabaseOperation implements Operation,Closeable {
     @Override
     public short getShort(String key, short defaultValue) {
         try {
-            Entry<Short> entry = mDB.get(mOperationSet.getPrimaryKey(),key,Short.class);
-            if(null != mOperationSet.getFilter() && mOperationSet.getFilter().isValid(entry)){
+            Entry<Short> entry = mDB.get(mOperations.getTag(),key,Short.class);
+            if(null != mOperations.getFilter() && mOperations.getFilter().isValid(entry)){
                 return entry.mData;
             }
         } catch (ClassNotFoundException e) {
@@ -307,8 +307,8 @@ public final class DatabaseOperation implements Operation,Closeable {
     @Override
     public byte[] getBlob(String key) {
         try {
-            Entry<byte[]> entry = mDB.getByteArray(mOperationSet.getPrimaryKey(),key);
-            if(null != mOperationSet.getFilter() && mOperationSet.getFilter().isValid(entry)){
+            Entry<byte[]> entry = mDB.getByteArray(mOperations.getTag(),key);
+            if(null != mOperations.getFilter() && mOperations.getFilter().isValid(entry)){
                 return entry.mData;
             }
         } catch (ClassNotFoundException e) {
@@ -320,8 +320,8 @@ public final class DatabaseOperation implements Operation,Closeable {
     @Override
     public String getString(String key) {
         try {
-            Entry<String> entry = mDB.get(mOperationSet.getPrimaryKey(),key,String.class);
-            if(null != mOperationSet.getFilter() && mOperationSet.getFilter().isValid(entry)){
+            Entry<String> entry = mDB.get(mOperations.getTag(),key,String.class);
+            if(null != mOperations.getFilter() && mOperations.getFilter().isValid(entry)){
                 return entry.mData;
             }
         } catch (ClassNotFoundException e) {
@@ -333,8 +333,8 @@ public final class DatabaseOperation implements Operation,Closeable {
     @Override
     public Serializable getSerializable(String key) {
         try {
-            Entry<Serializable> entry = mDB.get(mOperationSet.getPrimaryKey(),key,Serializable.class);
-            if(null != mOperationSet.getFilter() && mOperationSet.getFilter().isValid(entry)){
+            Entry<Serializable> entry = mDB.get(mOperations.getTag(),key,Serializable.class);
+            if(null != mOperations.getFilter() && mOperations.getFilter().isValid(entry)){
                 return entry.mData;
             }
         } catch (ClassNotFoundException e) {
@@ -364,7 +364,7 @@ public final class DatabaseOperation implements Operation,Closeable {
 
     @Override
     public Result<?> remove(String key) {
-        long l = mDB.remove(mOperationSet.getPrimaryKey()+"_"+key);
+        long l = mDB.remove(mOperations.getTag()+"_"+key);
         return null;
     }
 

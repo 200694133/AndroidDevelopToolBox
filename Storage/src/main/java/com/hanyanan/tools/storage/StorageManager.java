@@ -12,7 +12,6 @@ import java.util.WeakHashMap;
  */
 public class StorageManager {
     private static StorageManager sInstance = null;
-    private DatabaseHelper mDatabaseHelper = null;
     private DatabaseOperation mDatabaseOperation = null;
     public static synchronized StorageManager getInstance(){
         if(null == sInstance) sInstance = new StorageManager();
@@ -26,35 +25,14 @@ public class StorageManager {
     public synchronized OperationTable generateOperationTable(String tag, Type type,Context context){
         OperationTable ot = new OperationTable(type,tag);
         ot.setStorageManager(this);
-
-
-
         return ot;
     }
-    public synchronized AsyncOperation getAsyncOperation(Type type,Context context){
-        if(type == Type.DATABASE){
-            if(null == mDatabaseHelper){
-                mDatabaseHelper = new DatabaseHelper(context);
-            }
-            if(null == mDatabaseOperation){
-                mDatabaseOperation  = new DatabaseOperation(mDatabaseHelper);
-            }
-        }else{
-            //TODO
-        }
-    }
 
 
 
-
-    private synchronized DatabaseHelper getDatabaseHelper(Context context){
-        if(null != mDatabaseHelper){
-            mDatabaseHelper = new DatabaseHelper(context);
-        }
-        return mDatabaseHelper;
-    }
-    private synchronized DatabaseOperation getDatabaseOperation(Context context){
-        DatabaseHelper dh = getDatabaseHelper(context);
-        return mDatabaseHelper;
+    private synchronized DatabaseOperation getDatabaseOperation(Context context, OperationTable ot){
+        DatabaseHelper dh = new DatabaseHelper(context);
+        DatabaseOperation dop = new DatabaseOperation(dh,ot);
+        return dop;
     }
 }
