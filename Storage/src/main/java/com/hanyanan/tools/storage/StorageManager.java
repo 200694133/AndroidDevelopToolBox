@@ -15,7 +15,7 @@ import java.util.WeakHashMap;
  */
 public class StorageManager {
     private static StorageManager sInstance = null;
-    private DatabaseOperation mDatabaseOperation = null;
+    private FixSizeDiskStorage mFixSizeDiskStorage;
     public static synchronized StorageManager getInstance(){
         if(null == sInstance) sInstance = new StorageManager();
         return sInstance;
@@ -32,7 +32,9 @@ public class StorageManager {
     }
 
     public synchronized FixSizeDiskStorage getFixSizeDiskStorage(File root, long size) throws IOException {
-        return FixSizeDiskStorage.open(root,1,size);
+        if(null != mFixSizeDiskStorage) return mFixSizeDiskStorage;
+        mFixSizeDiskStorage = FixSizeDiskStorage.open(root,1,size);
+        return mFixSizeDiskStorage;
     }
 
     public synchronized AsyncOperation getAsyncOperation(Context context, OperationTable ot){
@@ -53,11 +55,19 @@ public class StorageManager {
 
     private synchronized DatabaseOperation getDatabaseOperation(Context context, OperationTable ot){
         DatabaseHelper dh = new DatabaseHelper(context);
-        DatabaseOperation dop = new DatabaseOperation(dh,ot);
-        return dop;
+        DatabaseOperation dod= new DatabaseOperation(dh,ot);
+        return dod;
     }
 
-    public void dispose(){
+    public void dispose() {
+        if(null != mFixSizeDiskStorage){
+            try {
+                mFixSizeDiskStorage.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        mFixSizeDiskStorage = null;
         //TODO
     }
 }

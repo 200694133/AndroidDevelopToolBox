@@ -24,7 +24,7 @@ public class CommonAsyncOperation implements AsyncOperation{
     public void putInt(final Entry<Integer> entry, final Result.OnResultListener<Integer> listener) {
         executorService.execute(new Runnable() {
             public void run() {
-                Result<Integer> res = mOperation.put(entry.getKey(), entry.mData.intValue(), entry.mExpireTime);
+                Result<Integer> res = mOperation.put(entry.mSecondaryKey, entry.mData.intValue(), entry.mExpireTime);
                 if(null != listener){
                     listener.onResult(res);
                 }
@@ -36,7 +36,7 @@ public class CommonAsyncOperation implements AsyncOperation{
     public void putFloat(final Entry<Float> entry, final Result.OnResultListener<Float> listener) {
         executorService.execute(new Runnable() {
             public void run() {
-                Result<Float> res = mOperation.put(entry.getKey(), entry.mData.floatValue(),entry.mExpireTime);
+                Result<Float> res = mOperation.put(entry.mSecondaryKey, entry.mData.floatValue(),entry.mExpireTime);
                 if(null != listener){
                     listener.onResult(res);
                 }
@@ -48,7 +48,7 @@ public class CommonAsyncOperation implements AsyncOperation{
     public void putDouble(final Entry<Double> entry, final Result.OnResultListener<Double> listener) {
         executorService.execute(new Runnable() {
             public void run() {
-                Result<Double> res = mOperation.put(entry.getKey(), entry.mData.doubleValue(),entry.mExpireTime);
+                Result<Double> res = mOperation.put(entry.mSecondaryKey, entry.mData.doubleValue(),entry.mExpireTime);
                 if(null != listener){
                     listener.onResult(res);
                 }
@@ -60,7 +60,7 @@ public class CommonAsyncOperation implements AsyncOperation{
     public void putByte(final Entry<Byte> entry, final Result.OnResultListener<Byte> listener) {
         executorService.execute(new Runnable() {
             public void run() {
-                Result<Byte> res = mOperation.put(entry.getKey(), entry.mData.byteValue(),entry.mExpireTime);
+                Result<Byte> res = mOperation.put(entry.mSecondaryKey, entry.mData.byteValue(),entry.mExpireTime);
                 if(null != listener){
                     listener.onResult(res);
                 }
@@ -72,7 +72,7 @@ public class CommonAsyncOperation implements AsyncOperation{
     public void putLong(final Entry<Long> entry, final Result.OnResultListener<Long> listener) {
         executorService.execute(new Runnable() {
             public void run() {
-                Result<Long> res = mOperation.put(entry.getKey(), entry.mData.longValue(),entry.mExpireTime);
+                Result<Long> res = mOperation.put(entry.mSecondaryKey, entry.mData.longValue(),entry.mExpireTime);
                 if(null != listener){
                     listener.onResult(res);
                 }
@@ -84,7 +84,7 @@ public class CommonAsyncOperation implements AsyncOperation{
     public void putShort(final Entry<Short> entry, final Result.OnResultListener<Short> listener) {
         executorService.execute(new Runnable() {
             public void run() {
-                Result<Short> res = mOperation.put(entry.getKey(), entry.mData.shortValue(),entry.mExpireTime);
+                Result<Short> res = mOperation.put(entry.mSecondaryKey, entry.mData.shortValue(),entry.mExpireTime);
                 if(null != listener){
                     listener.onResult(res);
                 }
@@ -96,7 +96,7 @@ public class CommonAsyncOperation implements AsyncOperation{
     public void putChar(final Entry<Character> entry, final Result.OnResultListener<Character> listener) {
         executorService.execute(new Runnable() {
             public void run() {
-                Result<Character> res = mOperation.put(entry.getKey(), entry.mData.charValue(),entry.mExpireTime);
+                Result<Character> res = mOperation.put(entry.mSecondaryKey, entry.mData.charValue(),entry.mExpireTime);
                 if(null != listener){
                     listener.onResult(res);
                 }
@@ -108,7 +108,7 @@ public class CommonAsyncOperation implements AsyncOperation{
     public void putString(final Entry<String> entry,final Result.OnResultListener<String> listener) {
         executorService.execute(new Runnable() {
             public void run() {
-                Result<String> res = mOperation.put(entry.getKey(), entry.mData,entry.mExpireTime);
+                Result<String> res = mOperation.put(entry.mSecondaryKey, entry.mData,entry.mExpireTime);
                 if(null != listener){
                     listener.onResult(res);
                 }
@@ -120,7 +120,7 @@ public class CommonAsyncOperation implements AsyncOperation{
     public void putBytes(final Entry<byte[]> entry, final Result.OnResultListener<byte[]> listener) {
         executorService.execute(new Runnable() {
             public void run() {
-                Result<byte[]> res = mOperation.put(entry.getKey(), entry.mData,entry.mExpireTime);
+                Result<byte[]> res = mOperation.put(entry.mSecondaryKey, entry.mData,entry.mExpireTime);
                 if(null != listener){
                     listener.onResult(res);
                 }
@@ -132,7 +132,7 @@ public class CommonAsyncOperation implements AsyncOperation{
     public void putSerialize(final Entry<Serializable> entry, final Result.OnResultListener<Serializable> listener) {
         executorService.execute(new Runnable() {
             public void run() {
-                Result<Serializable> res = mOperation.put(entry.getKey(), entry.mData,entry.mExpireTime);
+                Result<Serializable> res = mOperation.put(entry.mSecondaryKey, entry.mData,entry.mExpireTime);
                 if(null != listener){
                     listener.onResult(res);
                 }

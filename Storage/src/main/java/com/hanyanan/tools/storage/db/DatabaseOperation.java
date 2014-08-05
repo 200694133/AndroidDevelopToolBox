@@ -1,5 +1,7 @@
 package com.hanyanan.tools.storage.db;
 
+import android.util.Log;
+
 import com.hanyanan.tools.storage.Entry;
 import com.hanyanan.tools.storage.Error.*;
 import com.hanyanan.tools.storage.Error.Error;
@@ -199,6 +201,8 @@ public final class DatabaseOperation implements Operation,Closeable {
                 Object obj = pair.get(key);
                 if(obj instanceof byte[]){
                     put(key,(byte[])obj, expireTime);
+                }else if(obj instanceof String){
+                    put(key,(String)obj, expireTime);
                 }else if(obj instanceof Serializable){
                     put(key,(Serializable)obj, expireTime);
                 }else{
@@ -216,7 +220,11 @@ public final class DatabaseOperation implements Operation,Closeable {
     public int getInt(String key, int defaultValue) {
         try {
             Entry<Integer> entry = mDB.get(mOperations.getTag(),key,Integer.class);
-            if(null != mOperations.getFilter() && mOperations.getFilter().isValid(entry)){
+            if(null == entry) return defaultValue;
+            if(null == mOperations.getFilter()){
+                return entry.mData;
+            }
+            if(mOperations.getFilter().isValid(entry)){
                 return entry.mData;
             }
         } catch (ClassNotFoundException e) {
@@ -230,7 +238,11 @@ public final class DatabaseOperation implements Operation,Closeable {
     public float getFloat(String key, float defaultValue) {
         try {
             Entry<Float> entry = mDB.get(mOperations.getTag(),key,Float.class);
-            if(null != mOperations.getFilter() && mOperations.getFilter().isValid(entry)){
+            if(null == entry) return defaultValue;
+            if(null == mOperations.getFilter()){
+                return entry.mData;
+            }
+            if(mOperations.getFilter().isValid(entry)){
                 return entry.mData;
             }
         } catch (ClassNotFoundException e) {
@@ -243,7 +255,11 @@ public final class DatabaseOperation implements Operation,Closeable {
     public double getDouble(String key, double defaultValue) {
         try {
             Entry<Double> entry = mDB.get(mOperations.getTag(),key,Double.class);
-            if(null != mOperations.getFilter() && mOperations.getFilter().isValid(entry)){
+            if(null == entry) return defaultValue;
+            if(null == mOperations.getFilter()){
+                return entry.mData;
+            }
+            if(mOperations.getFilter().isValid(entry)){
                 return entry.mData;
             }
         } catch (ClassNotFoundException e) {
@@ -256,7 +272,11 @@ public final class DatabaseOperation implements Operation,Closeable {
     public long getLong(String key, long defaultValue) {
         try {
             Entry<Long> entry = mDB.get(mOperations.getTag(),key,Long.class);
-            if(null != mOperations.getFilter() && mOperations.getFilter().isValid(entry)){
+            if(null == entry) return defaultValue;
+            if(null == mOperations.getFilter()){
+                return entry.mData;
+            }
+            if(mOperations.getFilter().isValid(entry)){
                 return entry.mData;
             }
         } catch (ClassNotFoundException e) {
@@ -269,7 +289,11 @@ public final class DatabaseOperation implements Operation,Closeable {
     public byte getByte(String key, byte defaultValue) {
         try {
             Entry<Byte> entry = mDB.get(mOperations.getTag(),key,Byte.class);
-            if(null != mOperations.getFilter() && mOperations.getFilter().isValid(entry)){
+            if(null == entry) return defaultValue;
+            if(null == mOperations.getFilter()){
+                return entry.mData;
+            }
+            if(mOperations.getFilter().isValid(entry)){
                 return entry.mData;
             }
         } catch (ClassNotFoundException e) {
@@ -282,7 +306,11 @@ public final class DatabaseOperation implements Operation,Closeable {
     public char getChar(String key, char defaultValue) {
         try {
             Entry<Character> entry = mDB.get(mOperations.getTag(),key,Character.class);
-            if(null != mOperations.getFilter() && mOperations.getFilter().isValid(entry)){
+            if(null == entry) return defaultValue;
+            if(null == mOperations.getFilter()){
+                return entry.mData;
+            }
+            if(mOperations.getFilter().isValid(entry)){
                 return entry.mData;
             }
         } catch (ClassNotFoundException e) {
@@ -295,7 +323,11 @@ public final class DatabaseOperation implements Operation,Closeable {
     public short getShort(String key, short defaultValue) {
         try {
             Entry<Short> entry = mDB.get(mOperations.getTag(),key,Short.class);
-            if(null != mOperations.getFilter() && mOperations.getFilter().isValid(entry)){
+            if(null == entry) return defaultValue;
+            if(null == mOperations.getFilter()){
+                return entry.mData;
+            }
+            if(mOperations.getFilter().isValid(entry)){
                 return entry.mData;
             }
         } catch (ClassNotFoundException e) {
@@ -308,7 +340,11 @@ public final class DatabaseOperation implements Operation,Closeable {
     public byte[] getBlob(String key) {
         try {
             Entry<byte[]> entry = mDB.getByteArray(mOperations.getTag(),key);
-            if(null != mOperations.getFilter() && mOperations.getFilter().isValid(entry)){
+            if(null == entry) return null;
+            if(null == mOperations.getFilter()){
+                return entry.mData;
+            }
+            if(mOperations.getFilter().isValid(entry)){
                 return entry.mData;
             }
         } catch (ClassNotFoundException e) {
@@ -321,7 +357,11 @@ public final class DatabaseOperation implements Operation,Closeable {
     public String getString(String key) {
         try {
             Entry<String> entry = mDB.get(mOperations.getTag(),key,String.class);
-            if(null != mOperations.getFilter() && mOperations.getFilter().isValid(entry)){
+            if(null == entry) return null;
+            if(null == mOperations.getFilter()){
+                return entry.mData;
+            }
+            if(mOperations.getFilter().isValid(entry)){
                 return entry.mData;
             }
         } catch (ClassNotFoundException e) {
@@ -334,7 +374,11 @@ public final class DatabaseOperation implements Operation,Closeable {
     public Serializable getSerializable(String key) {
         try {
             Entry<Serializable> entry = mDB.get(mOperations.getTag(),key,Serializable.class);
-            if(null != mOperations.getFilter() && mOperations.getFilter().isValid(entry)){
+            if(null == entry) return null;
+            if(null == mOperations.getFilter()){
+                return entry.mData;
+            }
+            if(mOperations.getFilter().isValid(entry)){
                 return entry.mData;
             }
         } catch (ClassNotFoundException e) {

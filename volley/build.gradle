@@ -6,11 +6,9 @@ buildscript {
         classpath 'com.android.tools.build:gradle:0.12.+'
     }
 }
-
 apply plugin: 'android-library'
-
 android {
-    compileSdkVersion 19
+    compileSdkVersion 18
     buildToolsVersion = 19.1
 
     sourceSets {
@@ -19,12 +17,12 @@ android {
         }
 
         main {
-            assets.srcDirs       = ['assets']
-            res.srcDirs          = ['res']
-            aidl.srcDirs         = ['src']
-            resources.srcDirs    = ['src']
+            assets.srcDirs = ['assets']
+            res.srcDirs = ['res']
+            aidl.srcDirs = ['src']
+            resources.srcDirs = ['src']
             renderscript.srcDirs = ['src']
-            java.srcDirs         = ['src']
+            java.srcDirs = ['src']
             manifest.srcFile 'AndroidManifest.xml'
 
         }
@@ -32,4 +30,7 @@ android {
         instrumentTest.setRoot('tests')
         instrumentTest.java.srcDirs = ['tests/src']
     }
+}
+
+dependencies {
 }

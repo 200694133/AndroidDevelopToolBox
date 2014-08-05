@@ -1,11 +1,20 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.preview.hanyanan.myapplication">
+    package="com.hanyanan.tools">
 
+    <uses-sdk
+        android:targetSdkVersion="19"
+        android:maxSdkVersion="19"
+        android:minSdkVersion="19"/>
     <application android:allowBackup="true"
         android:label="@string/app_name"
         android:icon="@drawable/ic_launcher"
         android:theme="@style/AppTheme">
-
+        <activity android:name="com.hanyanan.tools.MainActivity" >
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
     </application>
 
 </manifest>

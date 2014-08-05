@@ -93,13 +93,6 @@ public class Utils {
     }
 
     public static byte[] serialize(Object content) throws TypeNotSupportError {
-        if(content instanceof byte[]){
-            return (byte[])content;
-        }
-
-        if(!(content instanceof Serializable)){
-            throw new TypeNotSupportError(""+content.getClass()+" cannot Serializable");
-        }
 
         try {
             ByteArrayOutputStream mem_out = new ByteArrayOutputStream();

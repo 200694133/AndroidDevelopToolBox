@@ -24,6 +24,7 @@ public final class DatabaseHelper extends SQLiteOpenHelper {
     public static interface BaseColumns{
         public static final String KEY = "key";
         public static final String CONTENT_BLOB = "content_blob";
+        public static final String CLASS_TYPE = "class";
         public static final String EXPIRE_TIME = "expire_time";
         public static final String TIME_STAMP = "time_stamp";
     };
@@ -32,6 +33,7 @@ public final class DatabaseHelper extends SQLiteOpenHelper {
     private SQLiteStatement mDeleteStatement = null;
     private SQLiteStatement mUpdateTextStatement = null;
     private SQLiteStatement mUpdateBlobStatement = null;
+
     public DatabaseHelper(Context context) {
         super(context,context.getDatabasePath(DB_NAME).getAbsolutePath(), null,
                 VERSION, mDatabaseErrorHandler);
@@ -49,6 +51,7 @@ public final class DatabaseHelper extends SQLiteOpenHelper {
                 .append(" ( ")
                 .append(BaseColumns.KEY).append(" TEXT PRIMARY KEY,")
                 .append(BaseColumns.CONTENT_BLOB).append(" BLOB, ")
+                .append(BaseColumns.CLASS_TYPE).append(" LONG NOT NULL, ")
                 .append(BaseColumns.EXPIRE_TIME).append(" LONG NOT NULL, ")
                 .append(BaseColumns.TIME_STAMP).append(" LONG NOT NULL")
                 .append(" )");
@@ -64,14 +67,17 @@ public final class DatabaseHelper extends SQLiteOpenHelper {
                             + BaseColumns.KEY + ","
                             + BaseColumns.CONTENT_BLOB + ","
                             + BaseColumns.EXPIRE_TIME + ","
-                            + BaseColumns.TIME_STAMP
-                            + ") VALUES (?,?,?,?)");
+                            + BaseColumns.TIME_STAMP + ","
+                            + BaseColumns.CLASS_TYPE
+                            + ") VALUES (?,?,?,?,?)");
 
         }
+        ByteHelper.ClassType type = new ByteHelper.ClassType();
         mInsertTextStatement.bindString(1, content.getKey());
-        mInsertTextStatement.bindBlob(2, Utils.serialize(content.mData));
+        mInsertTextStatement.bindBlob(2, ByteHelper.toByte(content.mData, type));
         mInsertTextStatement.bindLong(3, content.mExpireTime);
         mInsertTextStatement.bindLong(4, content.mTimeStamp);
+        mInsertTextStatement.bindLong(5, type.getType());
         return mInsertTextStatement.executeInsert();
     }
 
@@ -79,18 +85,19 @@ public final class DatabaseHelper extends SQLiteOpenHelper {
         String key = Utils.generatorKey(primaryKey,secondaryKey);
         String sql = "select *  from " + TABLE + " where "+ BaseColumns.KEY + " = ? ";
         Cursor cursor = getReadableDatabase().rawQuery(sql, new String[]{key});
-        if(cursor == null || cursor.isClosed() || !cursor.moveToFirst()) return null;
-        if(cursor.moveToNext()){
+        if(cursor == null || cursor.isClosed() ||cursor.getCount()<=0) return null;
+        if(cursor.moveToFirst()){
             long et = cursor.getLong(cursor.getColumnIndex(BaseColumns.EXPIRE_TIME));
             long ts = cursor.getLong(cursor.getColumnIndex(BaseColumns.TIME_STAMP));
             String k = cursor.getString(cursor.getColumnIndex(BaseColumns.KEY));
+            long type = cursor.getLong(cursor.getColumnIndex(BaseColumns.CLASS_TYPE));
             byte data[] = cursor.getBlob(cursor.getColumnIndex(BaseColumns.CONTENT_BLOB));
             Entry entry = new Entry();
             entry.setKey(k);
             entry.mExpireTime = et;
             entry.mTimeStamp = ts;
-            Serializable obj = Utils.deSerialize(data);
-            entry.mData = clazz.cast(obj);
+            entry.mData = ByteHelper.toObject(data,(int)type);
+            return entry;
         }
         return null;
     }
@@ -99,8 +106,8 @@ public final class DatabaseHelper extends SQLiteOpenHelper {
         String key = Utils.generatorKey(primaryKey,secondaryKey);
         String sql = "select *  from " + TABLE + " where "+ BaseColumns.KEY + " = ? ";
         Cursor cursor = getReadableDatabase().rawQuery(sql, new String[]{key});
-        if(cursor == null || cursor.isClosed() || !cursor.moveToFirst()) return null;
-        if(cursor.moveToNext()){
+        if(cursor == null || cursor.isClosed() ||cursor.getCount()<=0) return null;
+        if(cursor.moveToFirst()){
             long et = cursor.getLong(cursor.getColumnIndex(BaseColumns.EXPIRE_TIME));
             long ts = cursor.getLong(cursor.getColumnIndex(BaseColumns.TIME_STAMP));
             String k = cursor.getString(cursor.getColumnIndex(BaseColumns.KEY));
@@ -110,49 +117,10 @@ public final class DatabaseHelper extends SQLiteOpenHelper {
             entry.mExpireTime = et;
             entry.mTimeStamp = ts;
             entry.mData = data;
+            return entry;
         }
         return null;
     }
-//
-//
-//
-//
-//
-//
-//
-//
-//    public String getText(final String key){
-//
-//
-//        if(cursor.moveToNext()){
-//            long et = cursor.getLong(cursor.getColumnIndex(BaseColumns.EXPIRE_TIME));
-//            byte data[] = cursor.getBlob(cursor.getColumnIndex(BaseColumns.CONTENT_BLOB));
-//            et = Security.decode(et);
-//            data = Security.decode(data);
-//            if(null == data || !Filter.isIllegal(new QueryResultEntry(key, et, data))) {
-//                return null;
-//            }
-//            return new String(data);
-//        }
-//        return null;
-//    }
-//
-//    public byte[] getBlob(final String key){
-//        String sql = "select "+ BaseColumns.CONTENT_BLOB+","+ BaseColumns.EXPIRE_TIME+
-//                " from " + TABLE + " where "+ BaseColumns.KEY + " = ? ";
-//        Cursor cursor = getReadableDatabase().rawQuery(sql, new String[]{key});
-//        if(cursor == null || cursor.isClosed() || !cursor.moveToFirst()) return null;
-//        if(cursor.moveToNext()){
-//            long et = cursor.getLong(cursor.getColumnIndex(BaseColumns.EXPIRE_TIME));
-//            byte[] data = cursor.getBlob(cursor.getColumnIndex(BaseColumns.CONTENT_BLOB));
-//            et = Security.decode(et);
-//            data = Security.decode(data);
-//            if(Filter.isIllegal(new QueryResultEntry(key,et,data))) {
-//                return data;
-//            }
-//        }
-//        return null;
-//    }
 
     public long remove(final String key){
         if(null == mDeleteStatement){
@@ -168,13 +136,15 @@ public final class DatabaseHelper extends SQLiteOpenHelper {
             mUpdateTextStatement = getWritableDatabase().compileStatement(
                     "UPDATE " + TABLE + " SET "
                             + BaseColumns.CONTENT_BLOB + " = ? , "+ BaseColumns.EXPIRE_TIME
-                            +" = ? WHERE "
+                            +" = ? , "+ BaseColumns.CLASS_TYPE +" = ? WHERE "
                             + BaseColumns.KEY + " = ?");
         }
-
-        mUpdateTextStatement.bindBlob(1, Utils.serialize(entry.mData));
+        ByteHelper.ClassType type = new ByteHelper.ClassType();
+        mUpdateTextStatement.bindBlob(1, ByteHelper.toByte(entry.mData, type));
         mUpdateTextStatement.bindLong(2, entry.mExpireTime);
-        mUpdateTextStatement.bindString(3, entry.getKey());
+        mInsertTextStatement.bindLong(3, type.getType());
+        mUpdateTextStatement.bindString(4, entry.getKey());
+
         return mUpdateTextStatement.executeUpdateDelete();
     }
 
@@ -182,10 +152,8 @@ public final class DatabaseHelper extends SQLiteOpenHelper {
         String sql = "select "+ BaseColumns.EXPIRE_TIME+
                 " from " + TABLE + " where "+ BaseColumns.KEY + " = ? ";
         Cursor cursor = getReadableDatabase().rawQuery(sql, new String[]{entry.getKey()});
-        if(cursor == null || cursor.isClosed() || !cursor.moveToFirst()) return false;
-        if(cursor.moveToNext()){
-            long et = cursor.getLong(cursor.getColumnIndex(BaseColumns.EXPIRE_TIME));
-            if(et > System.currentTimeMillis()) return false;
+        if(cursor == null || cursor.isClosed()) return false;
+        if(cursor.getCount() > 0){
             return true;
         }
         return false;

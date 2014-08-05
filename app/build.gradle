@@ -5,9 +5,9 @@ android {
     buildToolsVersion '20.0.0'
 
     defaultConfig {
-        applicationId "com.preview.hanyanan.myapplication"
-        minSdkVersion 17
-        targetSdkVersion 20
+        applicationId "com.hanyanan.tools"
+        minSdkVersion 19
+        targetSdkVersion 19
         versionCode 1
         versionName "1.0"
     }
@@ -16,6 +16,8 @@ android {
             runProguard false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
+    }
+    compileOptions {
     }
 }
 
