@@ -1,6 +1,7 @@
 package com.hanyanan.tools.storage.disk;
 
 import android.text.TextUtils;
+import android.util.Log;
 
 import com.hanyanan.tools.storage.Error.BusyInUsingError;
 import com.hanyanan.tools.storage.IStreamStorage;
@@ -225,7 +226,7 @@ class FlexibleDiskStorage implements IStreamStorage {
     private void writeToJournal(String line)throws IOException{
         synchronized (this) {
             if (null != journalWriter) {
-                journalWriter.write(line);
+                journalWriter.write(line+"\n");
                 journalWriter.flush();
             }
         }
@@ -299,6 +300,29 @@ class FlexibleDiskStorage implements IStreamStorage {
      * Returns an editor for the entry named {@code key}, or null if another
      * edit is in progress.
      */
+//    public Editor edit(String key) throws IOException,BusyInUsingError{
+//        synchronized (this) {
+//            checkNotClosed();
+//            validateKey(key);
+//            Entry entry = lruEntries.get(key);
+//            if (entry == null) {
+//                entry = new Entry(key);
+//                lruEntries.put(key, entry);
+//            } else if (entry.currentEditor != null) {
+//                throw new BusyInUsingError("Another edit is in progress, please try later!");
+//            }
+//
+//            Editor editor = new Editor(entry);
+//            entry.currentEditor = editor;
+//
+//            // Flush the journal before creating files to prevent file leaks.
+////            journalWriter.write(Action.DIRTY_ACTION.getAction() + ' ' + key + '\n');
+////            journalWriter.flush();
+//            writeToJournal(parseJournal(Action.DIRTY_ACTION, entry));
+//            return editor;
+//        }
+//    }
+
     public Editor edit(String key) throws IOException,BusyInUsingError{
         synchronized (this) {
             checkNotClosed();
@@ -306,19 +330,20 @@ class FlexibleDiskStorage implements IStreamStorage {
             Entry entry = lruEntries.get(key);
             if (entry == null) {
                 entry = new Entry(key);
-                lruEntries.put(key, entry);
-            } else if (entry.currentEditor != null) {
-                throw new BusyInUsingError("Another edit is in progress, please try later!");
+                Editor editor = new Editor(entry);
+                entry.currentEditor = editor;
+                writeToJournal(parseJournal(Action.DIRTY_ACTION, entry));
+                return editor;
+//                lruEntries.put(key, entry);
+            }else{
+                if (entry.currentEditor != null) {
+                    throw new BusyInUsingError("Another edit is in progress, please try later!");
+                }
+                Editor editor = new Editor(entry);
+                entry.currentEditor = editor;
+                writeToJournal(parseJournal(Action.DIRTY_ACTION, entry));
+                return editor;
             }
-
-            Editor editor = new Editor(entry);
-            entry.currentEditor = editor;
-
-            // Flush the journal before creating files to prevent file leaks.
-//            journalWriter.write(Action.DIRTY_ACTION.getAction() + ' ' + key + '\n');
-//            journalWriter.flush();
-            writeToJournal(parseJournal(Action.DIRTY_ACTION, entry));
-            return editor;
         }
     }
 
@@ -340,6 +365,8 @@ class FlexibleDiskStorage implements IStreamStorage {
                 }
             }
 
+            redundantOpCount++;
+            entry.currentEditor = null;
             File dirty = entry.getDirtyFile();
             if (success) {
                 if (dirty.exists()) {
@@ -351,14 +378,18 @@ class FlexibleDiskStorage implements IStreamStorage {
 //                size = size - oldLength + newLength;
                     entry.readable = true;
                     entry.setClean();//dispose all snapshots
-                    onEntryChanged(entry.key, oldLength, newLength);
+                    if(lruEntries.containsKey(entry.getKey())) {
+                        onEntryChanged(entry.key, oldLength, newLength);
+                    }else{
+                        onEntryAdded(entry.key, newLength);
+                    }
+                    lruEntries.put(entry.key,entry);
                 }
             } else {
                 deleteIfExists(dirty);//abort
             }
 
-            redundantOpCount++;
-            entry.currentEditor = null;
+
             if (entry.readable | success) {
                 entry.readable = true;
 //                journalWriter.write(Action.CLEAN_ACTION + " " + entry.key + entry.getLength() + "\n");
@@ -391,13 +422,18 @@ class FlexibleDiskStorage implements IStreamStorage {
      * @return true if an entry was removed.
      */
     public boolean remove(String key) throws IOException {
+        Log.d("FixSizeDiskStorage","try to remove "+key);
         synchronized (this) {
             checkNotClosed();
             validateKey(key);
             Entry entry = lruEntries.get(key);
-            if (entry == null || entry.currentEditor != null) {
+            if (entry == null) {
                 return false;
             }
+            if(entry.currentEditor != null){
+                entry.currentEditor.abort();
+            }
+            entry.currentEditor=null;
 
             File file = entry.getCleanFile();
             if (file.exists() && !file.delete()) {

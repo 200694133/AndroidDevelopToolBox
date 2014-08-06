@@ -126,7 +126,7 @@ public class HurlStack implements HttpStack {
                    Map<String, String> additionalHeaders) throws IOException, AuthFailureError {
         String url = request.getUrl();
         HashMap<String, String> map = new HashMap<String, String>();
-        map.putAll(additionalHeaders);
+        if(null != additionalHeaders) map.putAll(additionalHeaders);
         if (mUrlRewriter != null) {
             String rewritten = mUrlRewriter.rewriteUrl(url);
             if (rewritten == null) {

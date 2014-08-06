@@ -9,9 +9,9 @@ public abstract class Request<T> implements Comparable<Request<T>>{
     /** Listener interface for errors. */
     private Response.ErrorListener mErrorListener;
     private Response.Listener<T> mResultListener;
-
+    private static int sSequence = 0;
     /** Sequence number of this request, used to enforce FIFO ordering. */
-    private Integer mSequence;
+    private Integer mSequence = new Integer(sSequence++);
 
     private volatile boolean isCanceled = false;
     /**
@@ -50,7 +50,7 @@ public abstract class Request<T> implements Comparable<Request<T>>{
     private Object mTag;
 
     /** The priority of this request. */
-    private Priority mPriority;
+    private Priority mPriority = Priority.NORMAL;
 
     /** The cache policy of this request to indicate if need cache the terminal response. */
     private CachePolicy mCachePolicy;
@@ -240,7 +240,8 @@ public abstract class Request<T> implements Comparable<Request<T>>{
      * sequence number to provide FIFO ordering.
      */
     @Override
-    public int compareTo(Request<T> other) {
+    public int compareTo(Request other) {
+        if(null == other) return 1;
         Priority left = this.getPriority();
         Priority right = other.getPriority();
 

@@ -51,13 +51,25 @@ public class RequestQueue {
     }
 
     /**
+     * Creates the worker pool. Processing will not begin until {@link #start()} is called.
+     *
+     * @param requestDispatchersCount the count of threads for running background request
+     */
+    public RequestQueue(int requestDispatchersCount) {
+        mDelivery = new DefaultResponseDelivery(new Handler());//TODO
+        mRequestDispatchers = new RequestDispatcher[requestDispatchersCount];
+        for(int i =0;i<requestDispatchersCount;++i){
+            mRequestDispatchers[i] = new RequestDispatcher(mRequestQueue, null, mDelivery);
+        }
+    }
+    /**
      * Starts the dispatchers in this queue.
      */
     public void start() {
         stop();  // Make sure any currently running dispatchers are stopped.
         // Create network dispatchers (and corresponding threads) up to the pool size.
         for (int i = 0; i < mRequestDispatchers.length; i++) {
-            RequestDispatcher networkDispatcher = new RequestDispatcher(mRequestQueue,mDelivery);
+            RequestDispatcher networkDispatcher = new RequestDispatcher(mRequestQueue,null,mDelivery);
             mRequestDispatchers[i] = networkDispatcher;
             networkDispatcher.start();
         }

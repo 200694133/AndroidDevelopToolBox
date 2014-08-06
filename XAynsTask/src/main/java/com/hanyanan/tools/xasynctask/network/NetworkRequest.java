@@ -1,5 +1,6 @@
 package com.hanyanan.tools.xasynctask.network;
 
+import com.hanyanan.tools.storage.disk.FixSizeDiskStorage;
 import com.hanyanan.tools.xasynctask.Request;
 import com.hanyanan.tools.xasynctask.RequestExecutor;
 import com.hanyanan.tools.xasynctask.Response;
@@ -15,7 +16,7 @@ import java.util.Map;
 /**
  * Created by hanyanan on 2014/7/29.
  */
-public class NetworkRequest<T> extends Request{
+public class NetworkRequest<T> extends Request<T>{
     /**
      * Default encoding for POST or PUT parameters. See {@link #getParamsEncoding()}.
      */
@@ -52,7 +53,7 @@ public class NetworkRequest<T> extends Request{
      * URL, and so on....
      */
     public NetworkRequest(String url, int method, HashMap<String, String> params,
-                          RequestExecutor<T, NetworkRequest<?>> requestExecutor,
+                          RequestExecutor  requestExecutor,
                           ResponseDelivery responseDelivery, Response.ErrorListener listener) {
         super(requestExecutor, responseDelivery, new NetworkRetryPolicy(), listener);
         mParams = params;
@@ -60,15 +61,15 @@ public class NetworkRequest<T> extends Request{
         mMethod = method;
     }
     public NetworkRequest(String url, HashMap<String, String> params,
-                          RequestExecutor<T, NetworkRequest<?>> requestExecutor,
+                          RequestExecutor  requestExecutor,
                           ResponseDelivery responseDelivery, Response.ErrorListener listener) {
         this(url, Method.GET,params,requestExecutor,responseDelivery, listener);
     }
 
-    public NetworkRequest(String url,RequestExecutor<T, NetworkRequest<?>> requestExecutor,
-                          ResponseDelivery responseDelivery, Response.ErrorListener listener) {
-        this(url, Method.GET, new HashMap<String, String>(),requestExecutor,responseDelivery, listener);
-    }
+//    public NetworkRequest(String url, FixSizeDiskStorage fixSizeDiskStorage, String s, RequestExecutor<T, NetworkRequest<T>> requestExecutor,
+//                          TestDiskCacheThread.DownloadRequestExecutor executor, ResponseDelivery responseDelivery, Response.ErrorListener listener) {
+//        this(url, Method.GET, new HashMap<String, String>(),requestExecutor,responseDelivery, listener);
+//    }
 
     public void setMethod(int method){
         mMethod = method;
@@ -96,7 +97,7 @@ public class NetworkRequest<T> extends Request{
      *
      * @throws AuthFailureError in the event of auth failure
      */
-    protected Map<String, String> getParams() throws AuthFailureError {
+    public Map<String, String> getParams() throws AuthFailureError {
         return mParams;
     }
 

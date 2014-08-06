@@ -5,6 +5,16 @@ package com.hanyanan.tools.xasynctask;
  */
 public class NoCachePolicy implements CachePolicy{
     @Override
+    public String getCacheKey() {
+        return null;
+    }
+
+    @Override
+    public boolean skipCache() {
+        return false;
+    }
+
+    @Override
     public boolean shouldCache() {
         return false;
     }
@@ -15,7 +25,12 @@ public class NoCachePolicy implements CachePolicy{
     }
 
     @Override
-    public boolean cacheEnable() {
+    public boolean canReadFromCache() {
+        return false;
+    }
+
+    @Override
+    public boolean missInCache() {
         return false;
     }
 }

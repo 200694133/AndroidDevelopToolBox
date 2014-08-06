@@ -62,6 +62,7 @@
     <orderEntry type="jdk" jdkName="Android API 19 Platform" jdkType="Android SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="module" module-name="Storage" exported="" />
+    <orderEntry type="module" module-name="XAynsTask" exported="" />
   </component>
 </module>
 

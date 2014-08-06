@@ -21,7 +21,8 @@ public class MainActivity extends Activity{
         super.onCreate(data);
 //        writeThread.start();
 //        new ReadThread(this).start();
-        new AsyncStorageTestThread(this).start();
+//        new AsyncStorageTestThread(this).start();
+        new TestDiskCacheThread(this).start();
     }
 
     private Thread writeThread = new Thread(){

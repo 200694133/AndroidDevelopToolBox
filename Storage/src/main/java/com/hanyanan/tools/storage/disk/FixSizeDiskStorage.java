@@ -1,5 +1,7 @@
 package com.hanyanan.tools.storage.disk;
 
+import android.util.Log;
+
 import com.hanyanan.tools.storage.StorageLog;
 import com.hanyanan.tools.storage.Utils;
 
@@ -15,6 +17,7 @@ import java.util.Map;
  * Created by hanyanan on 2014/7/28.
  */
 public class FixSizeDiskStorage extends FlexibleDiskStorage {
+    private static final String TAG = "FixSizeDiskStorage";
     private final static long DEFAULT_MAX_SIZE = 1024 * 1024 * 10;//10M
 
     private final long mMaxSize;
@@ -75,15 +78,21 @@ public class FixSizeDiskStorage extends FlexibleDiskStorage {
     }
 
     protected void onEntryChanged(String key, long oldLength, long currLength){
+        Log.d(TAG, "onEntryChanged old="+oldLength+", new="+currLength);
         mCurrSize = mCurrSize - oldLength + currLength;
+        Log.d(TAG, "onEntryChanged Current size "+mCurrSize);
         trimToSizeIfNeed();
     }
     protected void onEntryRemoved(String key, long length){
+        Log.d(TAG, "onEntryRemoved old="+length);
         mCurrSize = mCurrSize - length;
+        Log.d(TAG, "onEntryRemoved Current size "+mCurrSize);
         trimToSizeIfNeed();
     }
     protected void onEntryAdded(String key, long length){
+        Log.d(TAG, "onEntryAdded addSize="+length);
         mCurrSize = mCurrSize + length;
+        Log.d(TAG, "onEntryAdded Current size "+mCurrSize);
         trimToSizeIfNeed();
     }
     protected void onEntryClear(){
@@ -99,21 +108,24 @@ public class FixSizeDiskStorage extends FlexibleDiskStorage {
     private void trimToSizeIfNeed(){
         synchronized (this){
             if(mCurrSize > mMaxSize){
+                Log.d(TAG, "mMaxSize "+mMaxSize);
                 trimToSize();
             }
         }
     }
     private void trimToSize(){
         Iterator<Map.Entry<String, Entry>> iterator = lruEntries.entrySet().iterator();
+
         while (iterator.hasNext()) {
             Map.Entry<String, Entry> entry = iterator.next();
             Entry e = entry.getValue();
-            iterator.remove();
+
             try {
                 remove(e.getKey());
             } catch (IOException e1) {
                 e1.printStackTrace();
             }
+
             if (StorageLog.DEBUG) {
                 StorageLog.v("trimToSize() remove "+e.getKey());
             }
