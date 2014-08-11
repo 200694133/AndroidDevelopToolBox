@@ -11,7 +11,7 @@ public abstract class Node <T>{
     protected Object mHolder;
     protected boolean isPositive = false;
     protected final List<Node> mForwardNodes = new ArrayList<Node>();
-    protected final List<Node> mDownwardNodes = new ArrayList<Node>();
+    protected final List<Node> mBackwardNodes = new ArrayList<Node>();
     protected final List<Node> mChildrenNodes = new ArrayList<Node>();
     protected DataChangeHandler mDataChangeHandler;
     protected T mData;
@@ -53,17 +53,17 @@ public abstract class Node <T>{
             mDataChangeHandler = handler;
         }
     }
-    public void addInfected(Node node){
+    public void addBackwardNode(Node node){
         synchronized (this){
-            mDownwardNodes.add(node);
+            mBackwardNodes.add(node);
         }
     }
-    public List<Node> getAllInfected(){
+    public List<Node> getBackwardNodes(){
         synchronized (this){
-            return new ArrayList<Node>(mDownwardNodes);
+            return new ArrayList<Node>(mBackwardNodes);
         }
     }
-    public void addDependency(Node node){
+    public void addForwardNode(Node node){
         synchronized (this){
             mForwardNodes.add(node);
         }
@@ -78,7 +78,7 @@ public abstract class Node <T>{
             return new ArrayList<Node>(mChildrenNodes);
         }
     }
-    public List<Node> getDependency(){
+    public List<Node> getForwardNodes(){
         synchronized (this){
             return new ArrayList<Node>(mForwardNodes);
         }
@@ -95,7 +95,7 @@ public abstract class Node <T>{
     public void setPositive(boolean positive){
         isPositive = positive;
     }
-
+    public Object getTag(){return mTag;}
     public static interface OnDataChangedListener<T> {
         public void onDataChanged(T data);
     }
