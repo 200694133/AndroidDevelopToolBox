@@ -1,1 +1,1 @@
-include ':app', ':Storage', ':XAynsTask',":volley"
+include ':app', ':Storage', ':XAynsTask', ':DataGraph',":volley"

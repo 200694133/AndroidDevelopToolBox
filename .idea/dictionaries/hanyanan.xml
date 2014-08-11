@@ -2,6 +2,7 @@
   <dictionary name="hanyanan">
     <words>
       <w>cacheable</w>
+      <w>gson</w>
       <w>hanyanan</w>
       <w>rewriter</w>
     </words>

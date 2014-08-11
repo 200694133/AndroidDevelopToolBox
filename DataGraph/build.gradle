@@ -1,11 +1,11 @@
 apply plugin: 'com.android.library'
 
 android {
-    compileSdkVersion 18
+    compileSdkVersion 'android-L'
     buildToolsVersion '20.0.0'
 
     defaultConfig {
-        applicationId "com.hanyanan.tools.xasynctask"
+        applicationId "com.hanyanan.tools.data"
         minSdkVersion 19
         targetSdkVersion 19
         versionCode 1
@@ -21,6 +21,6 @@ android {
 
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
-    compile project(':Storage')
+    compile project(':XAynsTask')
     compile 'com.google.code.gson:gson:2.1@jar'
 }

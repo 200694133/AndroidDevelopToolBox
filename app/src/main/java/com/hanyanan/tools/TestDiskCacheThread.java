@@ -105,14 +105,14 @@ public class TestDiskCacheThread extends Thread{
         try {
             File file = new File(Environment.getExternalStorageDirectory().getAbsolutePath()+"/T/");
             Log.d(TAG, "disk cache path "+file.getAbsolutePath());
-            fixSizeDiskStorage = FixSizeDiskStorage.open(file,1,10 * 1024 * 1024);
+            fixSizeDiskStorage = FixSizeDiskStorage.open(file,1,50 * 1024 * 1024);
             Log.d(TAG, "create disk cache Success" );
         } catch (IOException e) {
             e.printStackTrace();
             return ;
         }
         DownloadRequestExecutor  executor = new DownloadRequestExecutor(new HurlStack());
-        int count = 10;
+        int count = 100;
         for(int i =0;i<count;++i){
             DownloadRequest nr = new DownloadRequest(urls[i%urls.length],fixSizeDiskStorage,""+i,executor,null);
             requestQueue.add(nr);
@@ -124,7 +124,7 @@ public class TestDiskCacheThread extends Thread{
 
         public DownloadRequest(String url,FixSizeDiskStorage fixSizeDiskStorage,String key,
                                DownloadRequestExecutor requestExecutor, Response.ErrorListener listener) {
-            super(url, null, requestExecutor, new DefaultResponseDelivery(new Handler()), listener);
+            super(url, null, requestExecutor, null, listener);
             mFixSizeDiskStorage = fixSizeDiskStorage;
             mKey = key;
         }

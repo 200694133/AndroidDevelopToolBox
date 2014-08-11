@@ -75,7 +75,7 @@ public class RequestDispatcher extends Thread{
                 CachePolicy cachePolicy = request.getCachePolicy();
                 RequestExecutor re  = request.getRequestExecutor();
                 ResponseDelivery rd = request.getResponseDelivery();
-
+                if(null == rd) rd = this.mDefaultDelivery;
                 //try get from cache
                 if(cachePolicy!=null && !cachePolicy.skipCache() && cachePolicy.canReadFromCache()){
                     //TODO
@@ -103,7 +103,9 @@ public class RequestDispatcher extends Thread{
                         mRequestQueue.add(request);
                     }else{
                         request.markDelivered();
-                        request.getResponseDelivery().postError(request, volleyError);
+                        ResponseDelivery rd = request.getResponseDelivery();
+                        if(null == rd) rd = this.mDefaultDelivery;
+                        rd.postError(request, volleyError);
                     }
                 }
             } catch (Exception e) {
@@ -113,7 +115,9 @@ public class RequestDispatcher extends Thread{
                     request.finish("discard-cancelled");
                 }else{
                     request.markDelivered();
-                    request.getResponseDelivery().postError(request, new XError(e));
+                    ResponseDelivery rd = request.getResponseDelivery();
+                    if(null == rd) rd = this.mDefaultDelivery;
+                    rd.postError(request, new XError(e));
                 }
             }
         }
