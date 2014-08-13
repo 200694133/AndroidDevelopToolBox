@@ -86,6 +86,9 @@ public class NetworkRequest<T> extends Request<T>{
         return mUrl;
     }
 
+    public String getKey(){
+        return String.valueOf(mUrl.hashCode());
+    }
     /**
      * Returns a Map of parameters to be used for a POST or PUT request.  Can throw
      * {@link AuthFailureError} as authentication may be required to provide these values.
