@@ -1,21 +1,40 @@
 package com.hanyanan.tools.magicbox.view;
 
 import android.content.Context;
+import android.graphics.Bitmap;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.AttributeSet;
+import android.util.LruCache;
 import android.widget.ImageView;
 
+import com.hanyanan.tools.schedule.DefaultResponseDelivery;
+import com.hanyanan.tools.schedule.Request;
 import com.hanyanan.tools.schedule.RequestQueue;
+import com.hanyanan.tools.schedule.Response;
+import com.hanyanan.tools.schedule.ResponseDelivery;
+import com.hanyanan.tools.schedule.XError;
+import com.hanyanan.tools.storage.disk.FixSizeDiskStorage;
+
+import java.io.File;
 
 /**
  * Created by hanyanan on 2014/8/12.
  */
-public class NetworkImageView extends ImageView{
-    private static final RequestQueue RequestQueue =  new  RequestQueue(4);
+public class NetworkImageView extends ImageView implements Response.ErrorListener,Response.Listener<Bitmap>{
+    public static final int MAXSIZE = 4 * 1024 * 1024;
+    private static final RequestQueue sRequestQueue =  new  RequestQueue(4);
+    private static final LruCache<String, Bitmap> sLruCache = new LruCache<String, Bitmap>(MAXSIZE){
+         protected int sizeOf(String key, Bitmap value) {
+         return value.getByteCount();
+        }
+    };
     public static int sDefaultImageId = -1;
     public static int sDefaultFaultId = -1;
     private int mDefaultImageId = sDefaultImageId;
     private int mDefaultFaultId = sDefaultFaultId;
     private String mUrl;
+    private ImageRequest mImageRequest = null;
     public NetworkImageView(Context context) {
         super(context);
     }
@@ -45,7 +64,10 @@ public class NetworkImageView extends ImageView{
         loadImageIfNecessary();
     }
     void loadImageIfNecessary(){
-
+        Bitmap bitmap = sLruCache.get(mUrl);
+        if(null != bitmap) this.setImageBitmap(bitmap);
+        mImageRequest = new ImageRequest(mUrl,new DefaultResponseDelivery(new Handler(Looper.getMainLooper())),this,this );
+        sRequestQueue.add(mImageRequest);
     }
 
     @Override
@@ -55,19 +77,30 @@ public class NetworkImageView extends ImageView{
     }
     @Override
     protected void onDetachedFromWindow() {
-        if (mImageContainer != null) {
-            // If the view was bound to an image request, cancel it and clear
-            // out the image from the view.
-            mImageContainer.cancelRequest();
+        if (mImageRequest != null) {
+            mImageRequest.cancel();
             setImageBitmap(null);
-            // also clear out the container so we can reload the image if necessary.
-            mImageContainer = null;
         }
+        mImageRequest = null;
         super.onDetachedFromWindow();
     }
     @Override
     protected void drawableStateChanged() {
         super.drawableStateChanged();
         invalidate();
+    }
+
+    @Override
+    public void onErrorResponse(XError error) {
+        this.setImageResource(mDefaultFaultId);
+    }
+
+    @Override
+    public void onResponse(Bitmap response) {
+        if(null == mImageRequest) return ;
+        if (null != response) {
+            sLruCache.put(mUrl, response);
+        }
+        this.setImageBitmap(response);
     }
 }

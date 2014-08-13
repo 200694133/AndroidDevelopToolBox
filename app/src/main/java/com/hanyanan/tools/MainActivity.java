@@ -5,6 +5,7 @@ import android.content.Context;
 import android.os.Bundle;
 import android.util.Log;
 
+import com.hanyanan.tools.magicbox.view.NetworkImageView;
 import com.hanyanan.tools.storage.OperationTable;
 import com.hanyanan.tools.storage.StorageManager;
 import com.hanyanan.tools.storage.Type;
@@ -19,10 +20,13 @@ import java.util.Set;
 public class MainActivity extends Activity{
     public void onCreate(Bundle data){
         super.onCreate(data);
+        setContentView(R.layout.main_activity);
+        NetworkImageView imageView = (NetworkImageView) this.findViewById(R.id.iv);
+        imageView.setUrl("http://file21.mafengwo.net/M00/A5/E7/wKgB21A2RZfh_kgvAAq7E33m80s94.jpeg");
 //        writeThread.start();
 //        new ReadThread(this).start();
 //        new AsyncStorageTestThread(this).start();
-        new TestDiskCacheThread(this).start();
+//        new TestDiskCacheThread(this).start();
     }
 
     private Thread writeThread = new Thread(){

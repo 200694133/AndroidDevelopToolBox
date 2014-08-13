@@ -1,6 +1,7 @@
 package com.hanyanan.tools.magicbox.view;
 
 import android.graphics.Bitmap;
+import android.os.Environment;
 
 import com.hanyanan.tools.schedule.Request;
 import com.hanyanan.tools.schedule.RequestExecutor;
@@ -10,6 +11,8 @@ import com.hanyanan.tools.schedule.RetryPolicy;
 import com.hanyanan.tools.schedule.network.NetworkRequest;
 import com.hanyanan.tools.storage.disk.FixSizeDiskStorage;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.HashMap;
 
 /**
@@ -17,7 +20,7 @@ import java.util.HashMap;
  */
 class ImageRequest extends NetworkRequest<Bitmap> {
     private static final BitmapExecutor sBitmapExecutor = new BitmapExecutor();
-    private final FixSizeDiskStorage mFixSizeDiskStorage;
+    private static FixSizeDiskStorage sFixSizeDiskStorage;
     private int mMaxWidth, mMaxHeight;
 
     public void setMaxWidth(int width){
@@ -29,7 +32,15 @@ class ImageRequest extends NetworkRequest<Bitmap> {
     }
 
     public FixSizeDiskStorage getFixSizeDiskStorage(){
-        return mFixSizeDiskStorage;
+        if(null == sFixSizeDiskStorage){
+            try {
+                sFixSizeDiskStorage = FixSizeDiskStorage.open(new File(Environment.getExternalStorageDirectory(), "data/dd"), 1, 1024 * 1024 * 200);
+            } catch (IOException e) {
+                e.printStackTrace();
+                sFixSizeDiskStorage = null;
+            }
+        }
+        return sFixSizeDiskStorage;
     }
     public String getUrl(){
         return mUrl;
@@ -43,9 +54,8 @@ class ImageRequest extends NetworkRequest<Bitmap> {
         return mMaxHeight;
     }
 
-    public ImageRequest(String url,FixSizeDiskStorage cache, ResponseDelivery delivery, Response.Listener<Bitmap> listener, Response.ErrorListener listener1) {
-        super(url, new HashMap<String, String>(), sBitmapExecutor,delivery, listener1);
+    public ImageRequest(String url,ResponseDelivery delivery, Response.Listener<Bitmap> listener, Response.ErrorListener listener1) {
+        super(url, new HashMap<String, String>(), sBitmapExecutor, delivery, listener1);
         setListener(listener);
-        mFixSizeDiskStorage = cache;
     }
 }
