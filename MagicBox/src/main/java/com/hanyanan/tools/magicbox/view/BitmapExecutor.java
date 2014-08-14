@@ -74,19 +74,25 @@ public class BitmapExecutor implements RequestExecutor<Bitmap,ImageRequest> {
         double wr = (double)maxWidth/actualWidth;
         double hr = (double)maxHeight/actualHeight;
         double r = Math.min(wr,hr);
-        return new Size((int)r*actualWidth,(int)r*actualHeight);
+        return new Size((int)(r*actualWidth),(int)(r*actualHeight));
     }
 
-    private Bitmap parseBitmap(InputStream inputStream, int maxWidth, int maxHeight){
+    private Bitmap parseBitmap(FixSizeDiskStorage cache, String key, int maxWidth, int maxHeight) throws IOException {
+        IStreamStorage.Snapshot snapshot = cache.get(key);
+        if(null == snapshot) return null;
         Bitmap.Config config = Bitmap.Config.RGB_565;
         BitmapFactory.Options decodeOptions = new BitmapFactory.Options();
         if (maxWidth == 0 && maxHeight == 0) {
             decodeOptions.inPreferredConfig = config;
-            return  BitmapFactory.decodeStream(inputStream,null,decodeOptions);
+            Bitmap bitmap = BitmapFactory.decodeStream(snapshot.getInputStream(),null,decodeOptions);
+            snapshot.close();
+            return bitmap;
         }
+        snapshot = cache.get(key);
+        if(null == snapshot) return null;
         Bitmap bitmap = null;
         decodeOptions.inJustDecodeBounds = true;
-        BitmapFactory.decodeStream(inputStream, null, decodeOptions);
+        BitmapFactory.decodeStream(snapshot.getInputStream(), null, decodeOptions);
         int actualWidth = decodeOptions.outWidth;
         int actualHeight = decodeOptions.outHeight;
         Size size = calculateDesiredSize(maxWidth, maxHeight, actualWidth, actualHeight);
@@ -96,9 +102,11 @@ public class BitmapExecutor implements RequestExecutor<Bitmap,ImageRequest> {
         decodeOptions.inJustDecodeBounds = false;
         decodeOptions.inSampleSize =
                 findBestSampleSize(actualWidth, actualHeight, desiredWidth, desiredHeight);
+        snapshot = cache.get(key);
+        if(null == snapshot) return null;
         Bitmap tempBitmap =
-                BitmapFactory.decodeStream(inputStream,null,decodeOptions);
-
+                BitmapFactory.decodeStream(snapshot.getInputStream(),null,decodeOptions);
+        snapshot.close();
         // If necessary, scale down to the maximal acceptable size.
         if (tempBitmap != null && (tempBitmap.getWidth() > desiredWidth ||
                 tempBitmap.getHeight() > desiredHeight)) {
@@ -114,7 +122,7 @@ public class BitmapExecutor implements RequestExecutor<Bitmap,ImageRequest> {
 
 
     @Override
-    public Response<Bitmap> performRequest(ImageRequest request) throws XError, BusyInUsingError {
+    public Response<Bitmap> performRequest(ImageRequest request) throws XError {
         FixSizeDiskStorage cache = request.getFixSizeDiskStorage();
         IStreamStorage.Snapshot snapshot = null;
         try {
@@ -134,7 +142,13 @@ public class BitmapExecutor implements RequestExecutor<Bitmap,ImageRequest> {
             //TODO
         }
 
-        Bitmap bitmap = parseBitmap(snapshot.getInputStream(),request.getMaxWidth(),request.getMaxHeight());
+        Bitmap bitmap = null;
+        try {
+            bitmap = parseBitmap(cache, request.getKey(),request.getMaxWidth(),request.getMaxHeight());
+        } catch (IOException e) {
+            e.printStackTrace();
+            return null;
+        }
         try {
             snapshot.getInputStream().close();
         } catch (IOException e) {

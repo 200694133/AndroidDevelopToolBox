@@ -1,6 +1,7 @@
 package com.hanyanan.tools.schedule;
 
 import android.os.Handler;
+import android.util.Log;
 
 /**
  * Created by hanyanan on 2014/7/29.
@@ -96,11 +97,12 @@ public abstract class Request<T> implements Comparable<Request<T>>{
         mResultListener = l;
     }
     public void finish(final String info){
+        addMarker(info);
         //TODO
     }
 
     public boolean isCanceled(){
-        return false;
+        return isCanceled;
     }
 
     /**
@@ -253,6 +255,6 @@ public abstract class Request<T> implements Comparable<Request<T>>{
     }
 
     public void addMarker(String marker){
-        //TODO
+        Log.d("Request", "Add marker " + marker);
     }
 }

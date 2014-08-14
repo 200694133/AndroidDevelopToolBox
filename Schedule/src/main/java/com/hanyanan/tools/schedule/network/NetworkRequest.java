@@ -87,7 +87,7 @@ public class NetworkRequest<T> extends Request<T>{
     }
 
     public String getKey(){
-        return String.valueOf(mUrl.hashCode());
+        return String.valueOf(Math.abs(mUrl.hashCode()));
     }
     /**
      * Returns a Map of parameters to be used for a POST or PUT request.  Can throw

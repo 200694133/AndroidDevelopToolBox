@@ -2,35 +2,31 @@ package com.hanyanan.tools;
 
 import android.content.Context;
 import android.os.Environment;
-import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
 import com.hanyanan.tools.storage.Error.BusyInUsingError;
 import com.hanyanan.tools.storage.IStreamStorage;
 import com.hanyanan.tools.storage.disk.FixSizeDiskStorage;
-import com.hanyanan.tools.xasynctask.DefaultResponseDelivery;
-import com.hanyanan.tools.xasynctask.RequestExecutor;
-import com.hanyanan.tools.xasynctask.RequestQueue;
-import com.hanyanan.tools.xasynctask.Response;
-import com.hanyanan.tools.xasynctask.ResponseDelivery;
-import com.hanyanan.tools.xasynctask.XError;
-import com.hanyanan.tools.xasynctask.network.HttpStack;
-import com.hanyanan.tools.xasynctask.network.HurlStack;
-import com.hanyanan.tools.xasynctask.network.NetworkError;
-import com.hanyanan.tools.xasynctask.network.NetworkRequest;
+import com.hanyanan.tools.schedule.RequestExecutor;
+import com.hanyanan.tools.schedule.RequestQueue;
+import com.hanyanan.tools.schedule.Response;
+import com.hanyanan.tools.schedule.XError;
+import com.hanyanan.tools.schedule.network.HttpStack;
+import com.hanyanan.tools.schedule.network.HurlStack;
+import com.hanyanan.tools.schedule.network.NetworkError;
+import com.hanyanan.tools.schedule.network.NetworkRequest;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.HashMap;
 
 /**
  * Created by hanyanan on 2014/8/6.
  */
 public class TestDiskCacheThread extends Thread{
-    private static final String TAG = "TestStorage";
-    private static final String [] urls = new String[]{
+    public static final String TAG = "TestStorage";
+    public static final String [] urls = new String[]{
             "http://file20.mafengwo.net/M00/A5/70/wKgB21A2RUiMftZQAA7bqi8IHxI08.jpeg",
             "http://file21.mafengwo.net/M00/A5/79/wKgB21A2RUzwJi4BAAk0KD0rHUA83.jpeg",
             "http://file21.mafengwo.net/M00/A5/81/wKgB21A2RVLZQvtBAAviJjczhZ889.jpeg",
@@ -120,7 +116,8 @@ public class TestDiskCacheThread extends Thread{
     }
 
     public static class DownloadRequest extends NetworkRequest<String>{
-        private final FixSizeDiskStorage mFixSizeDiskStorage;private final String mKey;
+        private final FixSizeDiskStorage mFixSizeDiskStorage;
+        private final String mKey;
 
         public DownloadRequest(String url,FixSizeDiskStorage fixSizeDiskStorage,String key,
                                DownloadRequestExecutor requestExecutor, Response.ErrorListener listener) {

@@ -96,6 +96,8 @@ public class RequestDispatcher extends Thread{
                 }
             } catch (XError volleyError) {
 //                parseAndDeliverNetworkError(request, volleyError);
+                request.addMarker("Request retry "+volleyError.toString());
+                volleyError.printStackTrace();
                 if(request.isCanceled()){
                     request.finish("discard-cancelled");
                 }else{
@@ -111,6 +113,8 @@ public class RequestDispatcher extends Thread{
             } catch (Exception e) {
 //                VolleyLog.e(e, "Unhandled exception %s", e.toString());
 //                mDelivery.postError(request, new VolleyError(e));
+                e.printStackTrace();
+                request.addMarker("Exception "+e.toString());
                 if(request.isCanceled()){
                     request.finish("discard-cancelled");
                 }else{

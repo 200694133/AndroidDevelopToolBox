@@ -5,9 +5,7 @@ import android.util.Log;
 import com.hanyanan.tools.schedule.RequestExecutor;
 import com.hanyanan.tools.schedule.Response;
 import com.hanyanan.tools.schedule.XError;
-import com.hanyanan.tools.storage.Error.BusyInUsingError;
-import com.hanyanan.tools.storage.IStreamStorage;
-import com.hanyanan.tools.storage.disk.FixSizeDiskStorage;
+
 
 import java.io.IOException;
 import java.io.InputStream;

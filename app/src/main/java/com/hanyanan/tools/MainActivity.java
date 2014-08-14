@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.content.Context;
 import android.os.Bundle;
 import android.util.Log;
+import android.widget.ListView;
 
 import com.hanyanan.tools.magicbox.view.NetworkImageView;
 import com.hanyanan.tools.storage.OperationTable;
@@ -21,8 +22,12 @@ public class MainActivity extends Activity{
     public void onCreate(Bundle data){
         super.onCreate(data);
         setContentView(R.layout.main_activity);
-        NetworkImageView imageView = (NetworkImageView) this.findViewById(R.id.iv);
-        imageView.setUrl("http://file21.mafengwo.net/M00/A5/E7/wKgB21A2RZfh_kgvAAq7E33m80s94.jpeg");
+//        NetworkImageView imageView = (NetworkImageView) this.findViewById(R.id.iv);
+//        imageView.setMaxWidth(200);
+//        imageView.setMaxHeight(200);
+//        imageView.setUrl("http://file21.mafengwo.net/M00/A5/E7/wKgB21A2RZfh_kgvAAq7E33m80s94.jpeg");
+        ListView listView = (ListView) findViewById(R.id.listview);
+        listView.setAdapter(new TestImageAdapter(this));
 //        writeThread.start();
 //        new ReadThread(this).start();
 //        new AsyncStorageTestThread(this).start();
