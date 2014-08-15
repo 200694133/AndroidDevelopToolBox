@@ -9,6 +9,7 @@ import android.util.AttributeSet;
 import android.util.LruCache;
 import android.widget.ImageView;
 
+import com.hanyanan.tools.magicbox.MagicApplication;
 import com.hanyanan.tools.magicbox.R;
 import com.hanyanan.tools.schedule.DefaultResponseDelivery;
 import com.hanyanan.tools.schedule.RequestQueue;
@@ -16,20 +17,12 @@ import com.hanyanan.tools.schedule.Response;
 import com.hanyanan.tools.schedule.XError;
 import com.hanyanan.tools.*;
 
+import java.lang.ref.WeakReference;
+
 /**
  * Created by hanyanan on 2014/8/12.
  */
 public class NetworkImageView extends ImageView implements Response.ErrorListener,Response.Listener<Bitmap>{
-    public static final int MAXSIZE = 4 * 1024 * 1024;
-    private static final RequestQueue sRequestQueue =  new  RequestQueue(4);
-    static{
-        sRequestQueue.start();
-    }
-    private static final LruCache<String, Bitmap> sLruCache = new LruCache<String, Bitmap>(MAXSIZE){
-         protected int sizeOf(String key, Bitmap value) {
-         return value.getByteCount();
-        }
-    };
     public static int sDefaultImageId = R.drawable.ic_launcher;
     public static int sDefaultFaultId = R.drawable.ic_launcher;
     private int mDefaultImageId = sDefaultImageId;
@@ -73,14 +66,17 @@ public class NetworkImageView extends ImageView implements Response.ErrorListene
         loadImageIfNecessary();
     }
     void loadImageIfNecessary(){
-        Bitmap bitmap = sLruCache.get(mUrl);
+        MagicApplication mApp = MagicApplication.getInstance();
+        if(null == mApp) return ;
+        LruCache<String, Bitmap> cache = mApp.getBitmapLruCache();
+        Bitmap bitmap = cache.get(mUrl);
         if(null != bitmap) {
             this.setImageBitmap(bitmap);
         }
         mImageRequest = new ImageRequest(mUrl,new DefaultResponseDelivery(new Handler(Looper.getMainLooper())),this,this );
         mImageRequest.setMaxWidth(getMaxWidth());
         mImageRequest.setMaxHeight(getMaxHeight());
-        sRequestQueue.add(mImageRequest);
+        mApp.getRequestQueue().add(mImageRequest);
     }
 
     @Override
@@ -110,8 +106,11 @@ public class NetworkImageView extends ImageView implements Response.ErrorListene
     @Override
     public void onResponse(Bitmap response) {
         if(null == mImageRequest) return ;
-        if (null != response) {
-            sLruCache.put(mUrl, response);
+        MagicApplication mApp = MagicApplication.getInstance();
+        if(null == mApp) return ;
+        LruCache<String, Bitmap> cache = mApp.getBitmapLruCache();
+        if (null != response && null != cache) {
+            cache.put(mUrl, response);
         }
         this.setImageBitmap(response);
     }

@@ -3,6 +3,7 @@ package com.hanyanan.tools.magicbox.view;
 import android.graphics.Bitmap;
 import android.os.Environment;
 
+import com.hanyanan.tools.magicbox.MagicApplication;
 import com.hanyanan.tools.schedule.Request;
 import com.hanyanan.tools.schedule.RequestExecutor;
 import com.hanyanan.tools.schedule.Response;
@@ -20,7 +21,6 @@ import java.util.HashMap;
  */
 class ImageRequest extends NetworkRequest<Bitmap> {
     private static final BitmapExecutor sBitmapExecutor = new BitmapExecutor();
-    private static FixSizeDiskStorage sFixSizeDiskStorage;
     private int mMaxWidth, mMaxHeight;
 
     public void setMaxWidth(int width){
@@ -32,15 +32,9 @@ class ImageRequest extends NetworkRequest<Bitmap> {
     }
 
     public FixSizeDiskStorage getFixSizeDiskStorage(){
-        if(null == sFixSizeDiskStorage){
-            try {
-                sFixSizeDiskStorage = FixSizeDiskStorage.open(new File(Environment.getExternalStorageDirectory(), "data/dd"), 1, 1024 * 1024 * 200);
-            } catch (IOException e) {
-                e.printStackTrace();
-                sFixSizeDiskStorage = null;
-            }
-        }
-        return sFixSizeDiskStorage;
+        MagicApplication mApp = MagicApplication.getInstance();
+        if(null == mApp) return null;
+        return mApp.getFixSizeDiskStorage();
     }
     public String getUrl(){
         return mUrl;
