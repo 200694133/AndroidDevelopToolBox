@@ -6,6 +6,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.Serializable;
 
 /**
  * Created by hanyanan on 2014/8/20.
@@ -59,13 +60,38 @@ public interface DiskStorage {
     boolean save(String key, InputStream inputStream) throws IOException;
 
     /**
-     * 
-     * @param key
-     * @param bitmap
-     * @param format
-     * @param quality
-     * @return
+     * Saves image bitmap in disk cache.
+     * @param key key to store
+     * @param bitmap bitmap to store
+     * @param format bitmap storage format, support jpeg and png ...
+     * @param quality quality to compress, 1-100, 100 is best.
+     * @return <b>true</b> - if bitmap was saved successfully;
+     *          <b>false</b> - if bitmap wasn't saved in disk cache.
      * @throws IOException
      */
     boolean save(String key, Bitmap bitmap, Bitmap.CompressFormat format, int quality) throws IOException;
+
+    /**
+     * Save Object to storage.
+     * @param key key
+     * @param serializable content to storage
+     * @return <b>true</b> - if bitmap was saved successfully;
+     *          <b>false</b> - if bitmap wasn't saved in disk cache.
+     * @throws IOException
+     */
+    <T extends Serializable> boolean saveObject(String key, T serializable) throws IOException;
+
+    <T extends Serializable> T getObject(String key, T clazz);
+    /**
+     * Removes file associated with incoming Key
+     * @param key key to remove
+     * @return <b>true</b> - if image file is deleted successfully; <b>false</b> - if image file doesn't exist for
+     * incoming URI or image file can't be deleted.
+     */
+    boolean remove(String key);
+    /** Closes disk storage, releases resources. */
+    void close();
+
+    /** Clears disk Storage. */
+    void clear() throws IOException;
 }

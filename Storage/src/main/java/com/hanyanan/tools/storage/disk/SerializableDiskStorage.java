@@ -6,9 +6,9 @@ import java.util.concurrent.ExecutorService;
  * Created by hanyanan on 2014/7/29.
  */
 public class SerializableDiskStorage {
-    private final FixSizeDiskStorage mFixSizeDiskStorage;
+    private final FixSizeDiskStorageImpl mFixSizeDiskStorage;
     private final ExecutorService mService;
-    SerializableDiskStorage(FixSizeDiskStorage driver, ExecutorService service){
+    SerializableDiskStorage(FixSizeDiskStorageImpl driver, ExecutorService service){
         mService = service;
         mFixSizeDiskStorage = driver;
     }

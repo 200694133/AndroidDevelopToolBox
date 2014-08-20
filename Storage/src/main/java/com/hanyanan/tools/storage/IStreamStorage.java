@@ -24,6 +24,8 @@ public interface IStreamStorage {
 
     public void close() throws IOException;
 
+    public long getCurrentSize();
+
     public static final OutputStream NULL_OUTPUT_STREAM = new OutputStream() {
         @Override
         public void write(int b) throws IOException {

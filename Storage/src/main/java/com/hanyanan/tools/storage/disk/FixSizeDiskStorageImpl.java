@@ -16,18 +16,18 @@ import java.util.Map;
 /**
  * Created by hanyanan on 2014/7/28.
  */
-public class FixSizeDiskStorage extends FlexibleDiskStorage {
+class FixSizeDiskStorageImpl extends FlexibleDiskStorageImpl {
     private static final String TAG = "FixSizeDiskStorage";
     private final static long DEFAULT_MAX_SIZE = 1024 * 1024 * 10;//10M
 
-    private final long mMaxSize;
-    private long mCurrSize = 0;
-    private FixSizeDiskStorage(File directory, int appVersion, long size) {
+    final long mMaxSize;
+    long mCurrSize = 0;
+    private FixSizeDiskStorageImpl(File directory, int appVersion, long size) {
         super(directory, appVersion);
         mMaxSize = size;
     }
 
-    private FixSizeDiskStorage(File directory, int appVersion) {
+    private FixSizeDiskStorageImpl(File directory, int appVersion) {
         this(directory, appVersion, DEFAULT_MAX_SIZE);
     }
     /**
@@ -37,7 +37,7 @@ public class FixSizeDiskStorage extends FlexibleDiskStorage {
      * @param directory a writable directory
      * @throws java.io.IOException if reading or writing the cache directory fails
      */
-    public static FixSizeDiskStorage open(File directory, int appVersion,long size)
+    public static FixSizeDiskStorageImpl open(File directory, int appVersion,long size)
             throws IOException {
         // If a bkp file exists, use it instead.
         File backupFile = new File(directory, JOURNAL_FILE_BACKUP);
@@ -52,7 +52,7 @@ public class FixSizeDiskStorage extends FlexibleDiskStorage {
         }
 
         // Prefer to pick up where we left off.
-        FixSizeDiskStorage cache = new FixSizeDiskStorage(directory, appVersion, size);
+        FixSizeDiskStorageImpl cache = new FixSizeDiskStorageImpl(directory, appVersion, size);
         if (cache.journalFile.exists()) {
             try {
                 cache.readJournal();
@@ -71,7 +71,7 @@ public class FixSizeDiskStorage extends FlexibleDiskStorage {
 
         // Create a new empty cache.
         directory.mkdirs();
-        cache = new FixSizeDiskStorage(directory, appVersion,size);
+        cache = new FixSizeDiskStorageImpl(directory, appVersion,size);
         cache.rebuildJournal();
         cache.trimToSizeIfNeed();
         return cache;

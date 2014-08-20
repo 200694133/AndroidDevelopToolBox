@@ -28,7 +28,7 @@ import java.util.regex.Pattern;
 /**
  * Created by hanyanan on 2014/7/14.
  */
-class FlexibleDiskStorage implements IStreamStorage {
+class FlexibleDiskStorageImpl implements IStreamStorage {
     private enum Action{
         DIRTY_ACTION("DIRTY"),
         CLEAN_ACTION("CLEAN"),
@@ -59,20 +59,30 @@ class FlexibleDiskStorage implements IStreamStorage {
     protected Writer journalWriter;
     protected final LinkedHashMap<String, Entry> lruEntries = new LinkedHashMap<String, Entry>(0, 0.75f, true);
     protected int redundantOpCount;
+    protected long mCurrentSize = 0;
+
+    public long getCurrentSize(){
+        return mCurrentSize;
+    }
 
     protected void onEntryChanged(String key, long oldLength, long currLength){
+        mCurrentSize -= oldLength;
+        mCurrentSize += currLength;
         //TODO
     }
     protected void onEntryRemoved(String key, long length){
+        mCurrentSize -= length;
         //TODO
     }
     protected void onEntryAdded(String key, long length){
+        mCurrentSize += length;
         //TODO
     }
     protected void onEntryClear(){
+        mCurrentSize = 0;
         //TODO
     }
-    protected FlexibleDiskStorage(File directory, int appVersion) {
+    protected FlexibleDiskStorageImpl(File directory, int appVersion) {
         this.directory = directory;
         this.appVersion = appVersion;
         this.journalFile = new File(directory, JOURNAL_FILE);
@@ -87,7 +97,7 @@ class FlexibleDiskStorage implements IStreamStorage {
      * @param directory a writable directory
      * @throws java.io.IOException if reading or writing the cache directory fails
      */
-    static FlexibleDiskStorage open(File directory, int appVersion)
+    static FlexibleDiskStorageImpl open(File directory, int appVersion)
             throws IOException {
         // If a bkp file exists, use it instead.
         File backupFile = new File(directory, JOURNAL_FILE_BACKUP);
@@ -102,7 +112,7 @@ class FlexibleDiskStorage implements IStreamStorage {
         }
 
         // Prefer to pick up where we left off.
-        FlexibleDiskStorage cache = new FlexibleDiskStorage(directory, appVersion);
+        FlexibleDiskStorageImpl cache = new FlexibleDiskStorageImpl(directory, appVersion);
         if (cache.journalFile.exists()) {
             try {
                 cache.readJournal();
@@ -120,7 +130,7 @@ class FlexibleDiskStorage implements IStreamStorage {
 
         // Create a new empty cache.
         directory.mkdirs();
-        cache = new FlexibleDiskStorage(directory, appVersion);
+        cache = new FlexibleDiskStorageImpl(directory, appVersion);
         cache.rebuildJournal();
         return cache;
     }
@@ -586,7 +596,7 @@ class FlexibleDiskStorage implements IStreamStorage {
         }
 
         public OutputStream newOutputStream(){
-            synchronized (FlexibleDiskStorage.this){
+            synchronized (FlexibleDiskStorageImpl.this){
                 if (entry.currentEditor != this) {
                     throw new IllegalStateException();
                 }
@@ -613,7 +623,7 @@ class FlexibleDiskStorage implements IStreamStorage {
 
         @Override
         public InputStream newInputStream() {
-            synchronized (FlexibleDiskStorage.this){
+            synchronized (FlexibleDiskStorageImpl.this){
                 if (entry.currentEditor != this) {
                     throw new IllegalStateException();
                 }
