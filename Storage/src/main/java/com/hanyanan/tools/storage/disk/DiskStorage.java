@@ -44,14 +44,16 @@ public interface DiskStorage {
 
     /**
      * Provide a safe and strong way(but not easy) to write data to storage, user can encoding data,
-     * But remember close stream, or it useless.
+     * But remember close stream, or it useless. Notice that user cannot set the expire time for current
+     * entry, invoke save* get a better experience.
      * @param key
      * @return output stream of current key, null means that failed.
      */
     OutputStream getOutputStream(String key);
     /**
      * Save the current input stream to storage. But notice that it's unsafe, it storage content
-     * without encoding.
+     * without encoding.In this method, it's no limited expire time.It's illegal forever until it
+     * has been delete in some reasons, such as disk full or user delete..
      * @param key key
      * @param inputStream the input stream need read and write to storage.
      * @return true means success, or other wise means failed.
@@ -60,7 +62,18 @@ public interface DiskStorage {
     boolean save(String key, InputStream inputStream) throws IOException;
 
     /**
-     * Saves image bitmap in disk cache.
+     * Save the current input stream to storage. But notice that it's unsafe, it storage content
+     * without encoding. It's valid before expire time.
+     * @param key key
+     * @param inputStream the input stream need read and write to storage.
+     * @param expireTime expire time for current entry.
+     * @return true means success, or other wise means failed.
+     * @throws IOException
+     */
+    boolean save(String key, InputStream inputStream, long expireTime) throws IOException;
+
+    /**
+     * Saves image bitmap in disk cache.Do set expire time.
      * @param key key to store
      * @param bitmap bitmap to store
      * @param format bitmap storage format, support jpeg and png ...
@@ -72,7 +85,19 @@ public interface DiskStorage {
     boolean save(String key, Bitmap bitmap, Bitmap.CompressFormat format, int quality) throws IOException;
 
     /**
-     * Save Object to storage.
+     * Saves image bitmap in disk cache.Set expire time.
+     * @param key key to store
+     * @param bitmap bitmap to store
+     * @param format bitmap storage format, support jpeg and png ...
+     * @param quality quality to compress, 1-100, 100 is best.
+     * @param expireTime expire time for current data.
+     * @return <b>true</b> - if bitmap was saved successfully;
+     *          <b>false</b> - if bitmap wasn't saved in disk cache.
+     * @throws IOException
+     */
+    boolean save(String key, Bitmap bitmap, Bitmap.CompressFormat format, int quality, long expireTime) throws IOException;
+    /**
+     * Save Object to storage. It's valid forever.
      * @param key key
      * @param serializable content to storage
      * @return <b>true</b> - if bitmap was saved successfully;
@@ -80,8 +105,19 @@ public interface DiskStorage {
      * @throws IOException
      */
     <T extends Serializable> boolean saveObject(String key, T serializable) throws IOException;
+    /**
+     * Save Object to storage. It's valid till times up.
+     * @param key key
+     * @param serializable content to storage
+     * @param expireTime expire time for current data.
+     * @return <b>true</b> - if bitmap was saved successfully;
+     *          <b>false</b> - if bitmap wasn't saved in disk cache.
+     * @throws IOException
+     */
+    <T extends Serializable> boolean saveObject(String key, T serializable, long expireTime) throws IOException;
 
-    <T extends Serializable> T getObject(String key, T clazz);
+
+    <T extends Serializable> T getObject(String key, T clazz)throws IOException;
     /**
      * Removes file associated with incoming Key
      * @param key key to remove
@@ -89,6 +125,7 @@ public interface DiskStorage {
      * incoming URI or image file can't be deleted.
      */
     boolean remove(String key);
+
     /** Closes disk storage, releases resources. */
     void close();
 

@@ -5,7 +5,7 @@ import android.os.Environment;
 import android.os.Looper;
 import android.util.Log;
 import com.hanyanan.tools.storage.Error.BusyInUsingError;
-import com.hanyanan.tools.storage.IStreamStorage;
+import com.hanyanan.tools.storage.disk.IStreamStorage;
 import com.hanyanan.tools.storage.disk.FixSizeDiskStorage;
 import com.hanyanan.tools.schedule.RequestExecutor;
 import com.hanyanan.tools.schedule.RequestQueue;

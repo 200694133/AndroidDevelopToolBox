@@ -2,19 +2,17 @@ package com.hanyanan.tools.magicbox.view;
 
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.hardware.Camera;
 import android.util.Log;
 
 import com.hanyanan.tools.schedule.RequestExecutor;
 import com.hanyanan.tools.schedule.Response;
 import com.hanyanan.tools.schedule.XError;
-import com.hanyanan.tools.schedule.network.AuthFailureError;
 import com.hanyanan.tools.schedule.network.HttpStack;
 import com.hanyanan.tools.schedule.network.HurlStack;
 import com.hanyanan.tools.schedule.network.NetworkError;
 import com.hanyanan.tools.schedule.network.NetworkRequest;
 import com.hanyanan.tools.storage.Error.BusyInUsingError;
-import com.hanyanan.tools.storage.IStreamStorage;
+import com.hanyanan.tools.storage.disk.IStreamStorage;
 import com.hanyanan.tools.storage.disk.FixSizeDiskStorage;
 
 import java.io.IOException;

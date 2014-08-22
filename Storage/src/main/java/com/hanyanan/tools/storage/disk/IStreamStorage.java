@@ -1,4 +1,4 @@
-package com.hanyanan.tools.storage;
+package com.hanyanan.tools.storage.disk;
 
 import com.hanyanan.tools.storage.Error.BusyInUsingError;
 
@@ -15,7 +15,7 @@ import java.io.OutputStream;
 /**
  * Created by hanyanan on 2014/8/1.
  */
-public interface IStreamStorage {
+interface IStreamStorage {
     public Editor edit(String key) throws IOException,BusyInUsingError;
 
     public Snapshot get(String key) throws IOException;
@@ -26,6 +26,8 @@ public interface IStreamStorage {
 
     public long getCurrentSize();
 
+    public File getRootFile();
+
     public static final OutputStream NULL_OUTPUT_STREAM = new OutputStream() {
         @Override
         public void write(int b) throws IOException {
@@ -34,13 +36,15 @@ public interface IStreamStorage {
     };
 
     public static interface Editor{
-        public void commit() throws IOException;
+        public boolean commit() throws IOException;
 
         public void abort() throws IOException;
 
         public OutputStream newOutputStream();
 
         public InputStream newInputStream();
+
+        public void setExpireTime(long expireTime);
 
         public void close();
 

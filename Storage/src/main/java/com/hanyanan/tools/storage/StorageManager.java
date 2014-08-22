@@ -1,21 +1,19 @@
 package com.hanyanan.tools.storage;
 
 import android.content.Context;
-
 import com.hanyanan.tools.storage.db.DatabaseHelper;
 import com.hanyanan.tools.storage.db.DatabaseOperation;
-import com.hanyanan.tools.storage.disk.FixSizeDiskStorage;
-
+import com.hanyanan.tools.storage.disk.DiskStorage;
+import com.hanyanan.tools.storage.disk.LimitedSizeDiskStorage;
 import java.io.File;
 import java.io.IOException;
-import java.util.WeakHashMap;
 
 /**
  * Created by hanyanan on 2014/8/4.
  */
 public class StorageManager {
     private static StorageManager sInstance = null;
-    private FixSizeDiskStorage mFixSizeDiskStorage;
+    private DiskStorage mDiskStorage;
     public static synchronized StorageManager getInstance(){
         if(null == sInstance) sInstance = new StorageManager();
         return sInstance;
@@ -31,10 +29,10 @@ public class StorageManager {
         return ot;
     }
 
-    public synchronized FixSizeDiskStorage getFixSizeDiskStorage(File root, long size) throws IOException {
-        if(null != mFixSizeDiskStorage) return mFixSizeDiskStorage;
-        mFixSizeDiskStorage = FixSizeDiskStorage.open(root,1,size);
-        return mFixSizeDiskStorage;
+    public synchronized DiskStorage getLimitedSizeDiskStorage(File root, long size) throws IOException {
+        if(null != mDiskStorage) return mDiskStorage;
+        mDiskStorage = LimitedSizeDiskStorage.open(root,size);
+        return mDiskStorage;
     }
 
     public synchronized AsyncOperation getAsyncOperation(Context context, OperationTable ot){
@@ -60,14 +58,10 @@ public class StorageManager {
     }
 
     public void dispose() {
-        if(null != mFixSizeDiskStorage){
-            try {
-                mFixSizeDiskStorage.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+        if(null != mDiskStorage){
+                mDiskStorage.close();
         }
-        mFixSizeDiskStorage = null;
+        mDiskStorage = null;
         //TODO
     }
 }

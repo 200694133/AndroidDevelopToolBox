@@ -4,7 +4,6 @@ import android.text.TextUtils;
 import android.util.Log;
 
 import com.hanyanan.tools.storage.Error.BusyInUsingError;
-import com.hanyanan.tools.storage.IStreamStorage;
 import com.hanyanan.tools.storage.Utils;
 
 import java.io.BufferedWriter;
@@ -63,6 +62,11 @@ class FlexibleDiskStorageImpl implements IStreamStorage {
 
     public long getCurrentSize(){
         return mCurrentSize;
+    }
+
+    @Override
+    public File getRootFile() {
+        return directory;
     }
 
     protected void onEntryChanged(String key, long oldLength, long currLength){
@@ -357,7 +361,7 @@ class FlexibleDiskStorageImpl implements IStreamStorage {
         }
     }
 
-    private void completeEdit(Editor editor, boolean success) throws IOException {
+    private boolean completeEdit(Editor editor, boolean success) throws IOException {
         synchronized (this) {
             Entry entry = editor.entry;
             if (entry.currentEditor != editor) {
@@ -371,7 +375,7 @@ class FlexibleDiskStorageImpl implements IStreamStorage {
                 }
                 if (!entry.getDirtyFile().exists()) {
                     editor.abort();
-                    return;
+                    return false;
                 }
             }
 
@@ -404,11 +408,13 @@ class FlexibleDiskStorageImpl implements IStreamStorage {
                 entry.readable = true;
 //                journalWriter.write(Action.CLEAN_ACTION + " " + entry.key + entry.getLength() + "\n");
                 writeToJournal(parseJournal(Action.CLEAN_ACTION, entry));
+                return true;
             } else {
                 lruEntries.remove(entry.key);
 //                journalWriter.write(Action.REMOVE_ACTION.getAction() + ' ' + entry.key + '\n');
                 writeToJournal(parseJournal(Action.REMOVE_ACTION, entry));
                 onEntryRemoved(entry.key, entry.getLength());
+                return false;
             }
 //            journalWriter.flush();
         }
@@ -582,19 +588,24 @@ class FlexibleDiskStorageImpl implements IStreamStorage {
         private Editor(Entry entry) {
             this.entry = entry;
         }
-        public void commit() throws IOException {
+        public boolean commit() throws IOException {
+            boolean success = false;
             if (hasErrors) {
-                completeEdit(this, false);
+                success = completeEdit(this, false);
                 remove(entry.key); // The previous entry is stale.
             } else {
-                completeEdit(this, true);
+                success = completeEdit(this, true);
             }
             committed = true;
+            return success;
         }
         public void abort() throws IOException {
             completeEdit(this, false);
         }
 
+        public void setExpireTime(long expireTime){
+            entry.expireTime = expireTime;
+        }
         public OutputStream newOutputStream(){
             synchronized (FlexibleDiskStorageImpl.this){
                 if (entry.currentEditor != this) {
@@ -652,7 +663,7 @@ class FlexibleDiskStorageImpl implements IStreamStorage {
         /** Lengths of this entry's files. */
         private long length;
         /** Time of expired. */
-        private long expireTime;
+        private long expireTime = Long.MAX_VALUE;
         /** True if this entry has ever been published. */
         private boolean readable;
         /** The ongoing edit or null if this entry is not being edited. */

@@ -9,9 +9,11 @@ import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InterruptedIOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.OutputStream;
 import java.io.Reader;
 import java.io.Serializable;
 import java.io.StreamCorruptedException;
@@ -24,9 +26,12 @@ import java.util.concurrent.Executors;
  * Created by hanyanan on 2014/7/8.
  */
 public class Utils {
-    public static final int PUT = 0x01;
-    public static final int REMOVE = 0x02;
-    public static final int GET = 0x03;
+    public static final int M = 1024 * 1024;
+    public static final int K = 1024;
+    public static final int DEFAULT_BUFF_SIZE = 16 * K;
+    public static final int DEFAULT_DISK_SIZE = 20 * M;
+
+
     public static final Charset ASCII_CHARSET = Charset.forName("US-ASCII");
     public static final Charset UTF8_CHARSET = Charset.forName("UTF-8");
     public static final Charset ISO_8859_1_CHARSET = Charset.forName("ISO-8859-1");
@@ -130,5 +135,35 @@ public class Utils {
 
     public static String generatorKey(String primaryKey, String secondaryKey){
         return primaryKey+"_"+secondaryKey;
+    }
+    public static void copy(InputStream in, OutputStream out, int buffSize)throws IOException{
+        copy(in,out,Integer.MAX_VALUE, buffSize);
+    }
+
+    public static void copy(InputStream in, OutputStream out)throws IOException{
+        copy(in,out,Integer.MAX_VALUE, DEFAULT_BUFF_SIZE);
+    }
+    /**
+     * Copies stream, from input stream to output stream.
+     * @param in input stream
+     * @param out output stream
+     * @param length length to copy
+     * @param buffSize buffer size
+     * @throws IOException
+     */
+    public static void copy(InputStream in, OutputStream out, int length, int buffSize) throws IOException{
+        final byte[] bytes = new byte[buffSize];
+        int leave = length;
+        int block = leave > buffSize?buffSize:leave;
+        int read = 0;
+        while(true){
+            read = in.read(bytes, 0, block);
+            out.write(bytes, 0, read);
+            leave -= read;
+            if(read ==0 || leave==0 || read< block){
+                break;
+            }
+            block = leave > buffSize?buffSize:leave;
+        }
     }
 }
