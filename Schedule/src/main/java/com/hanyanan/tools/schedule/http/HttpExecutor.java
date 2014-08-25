@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hanyanan.tools.schedule.network;
+package com.hanyanan.tools.schedule.http;
 
 
 import org.apache.http.HttpResponse;
@@ -26,7 +26,7 @@ import java.util.Map;
 /**
  * An HTTP stack abstraction.
  */
-public interface HttpStack {
+public interface HttpExecutor {
     /**
      * Performs an HTTP request with the given parameters.
      *

@@ -1,4 +1,4 @@
-package com.hanyanan.tools.schedule.network;
+package com.hanyanan.tools.schedule.http;
 
 import com.hanyanan.tools.schedule.RetryPolicy;
 import com.hanyanan.tools.schedule.XError;

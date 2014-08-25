@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hanyanan.tools.schedule.network;
+package com.hanyanan.tools.schedule.http;
 
 import android.os.SystemClock;
 import com.hanyanan.tools.schedule.XError;
@@ -33,22 +33,22 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * A network performing Volley requests over an {@link HttpStack}.
+ * A network performing Volley requests over an {@link HttpExecutor}.
  */
 public class BasicNetwork implements Network {
     protected static final boolean DEBUG = true;//TODO
 
     private static int SLOW_REQUEST_THRESHOLD_MS = 3000;
 
-    protected final HttpStack mHttpStack;
+    protected final HttpExecutor mHttpExecutor;
 
 
 
     /**
-     * @param httpStack HTTP stack to be used
+     * @param httpExecutor HTTP stack to be used
      */
-    public BasicNetwork(HttpStack httpStack) {
-        mHttpStack = httpStack;
+    public BasicNetwork(HttpExecutor httpExecutor) {
+        mHttpExecutor = httpExecutor;
     }
 
     @Override
@@ -62,7 +62,7 @@ public class BasicNetwork implements Network {
                 // Gather headers.
                 Map<String, String> headers = new HashMap<String, String>();
 //                addCacheHeaders(headers, request.getCacheEntry());
-                httpResponse = mHttpStack.performRequest(request, headers);
+                httpResponse = mHttpExecutor.performRequest(request, headers);
                 StatusLine statusLine = httpResponse.getStatusLine();
                 int statusCode = statusLine.getStatusCode();
 

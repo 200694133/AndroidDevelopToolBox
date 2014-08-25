@@ -14,19 +14,21 @@
  * limitations under the License.
  */
 
-package com.hanyanan.tools.schedule.network;
+package com.hanyanan.tools.schedule.http;
 
 
 /**
- * Indicates that the error responded with an error response.
+ * Indicates that the server's response could not be parsed.
  */
 @SuppressWarnings("serial")
-public class ServerError extends NetworkError {
-    public ServerError(NetworkResponse networkResponse) {
+public class ParseError extends NetworkError {
+    public ParseError() { }
+
+    public ParseError(NetworkResponse networkResponse) {
         super(networkResponse);
     }
 
-    public ServerError() {
-        super();
+    public ParseError(Throwable cause) {
+        super(cause);
     }
 }

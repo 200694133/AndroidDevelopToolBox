@@ -14,18 +14,19 @@
  * limitations under the License.
  */
 
-package com.hanyanan.tools.schedule.network;
-import com.hanyanan.tools.schedule.XError;
+package com.hanyanan.tools.schedule.http;
+
 
 /**
- * An interface for performing requests.
+ * Indicates that the error responded with an error response.
  */
-public interface Network {
-    /**
-     * Performs the specified request.
-     * @param request Request to process
-     * @return A {@link NetworkResponse} with data and caching metadata; will never be null
-     * @throws XError on errors
-     */
-    public NetworkResponse performRequest(NetworkRequest<?> request) throws XError;
+@SuppressWarnings("serial")
+public class ServerError extends NetworkError {
+    public ServerError(NetworkResponse networkResponse) {
+        super(networkResponse);
+    }
+
+    public ServerError() {
+        super();
+    }
 }

@@ -7,10 +7,10 @@ import android.util.Log;
 import com.hanyanan.tools.schedule.RequestExecutor;
 import com.hanyanan.tools.schedule.Response;
 import com.hanyanan.tools.schedule.XError;
-import com.hanyanan.tools.schedule.network.HttpStack;
-import com.hanyanan.tools.schedule.network.HurlStack;
-import com.hanyanan.tools.schedule.network.NetworkError;
-import com.hanyanan.tools.schedule.network.NetworkRequest;
+import com.hanyanan.tools.schedule.http.HttpConnectionExecutor;
+import com.hanyanan.tools.schedule.http.HttpExecutor;
+import com.hanyanan.tools.schedule.http.NetworkError;
+import com.hanyanan.tools.schedule.http.NetworkRequest;
 import com.hanyanan.tools.storage.Error.BusyInUsingError;
 import com.hanyanan.tools.storage.disk.IStreamStorage;
 import com.hanyanan.tools.storage.disk.FixSizeDiskStorage;
@@ -24,10 +24,10 @@ import java.io.OutputStream;
  */
 public class BitmapExecutor implements RequestExecutor<Bitmap,ImageRequest> {
     private static final String TAG = "BitmapExecutor";
-    private static Response downLoad(HttpStack httpStack,FixSizeDiskStorage fixSizeDiskStorage,NetworkRequest request) throws NetworkError {
+    private static Response downLoad(HttpExecutor httpExecutor,FixSizeDiskStorage fixSizeDiskStorage,NetworkRequest request) throws NetworkError {
         byte[] buff = new byte[4098];
         try {
-            InputStream inputStream = httpStack.performStreamRequest(request, request.getParams());
+            InputStream inputStream = httpExecutor.performStreamRequest(request, request.getParams());
             Log.d(TAG, "performRequest InputStream " + inputStream);
             IStreamStorage.Editor editor = fixSizeDiskStorage.edit(request.getKey());
             Log.d(TAG, "performRequest editor "+editor);
@@ -129,7 +129,7 @@ public class BitmapExecutor implements RequestExecutor<Bitmap,ImageRequest> {
             e.printStackTrace();
         }
         if(null == snapshot) {
-            downLoad(new HurlStack(), request.getFixSizeDiskStorage(), request);
+            downLoad(new HttpConnectionExecutor(), request.getFixSizeDiskStorage(), request);
             try {
                 snapshot = cache.get(request.getKey());
             } catch (IOException e) {

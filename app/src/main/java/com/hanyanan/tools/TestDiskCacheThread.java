@@ -4,6 +4,8 @@ import android.content.Context;
 import android.os.Environment;
 import android.os.Looper;
 import android.util.Log;
+
+import com.hanyanan.tools.schedule.http.HttpConnectionExecutor;
 import com.hanyanan.tools.storage.Error.BusyInUsingError;
 import com.hanyanan.tools.storage.disk.IStreamStorage;
 import com.hanyanan.tools.storage.disk.FixSizeDiskStorage;
@@ -11,10 +13,9 @@ import com.hanyanan.tools.schedule.RequestExecutor;
 import com.hanyanan.tools.schedule.RequestQueue;
 import com.hanyanan.tools.schedule.Response;
 import com.hanyanan.tools.schedule.XError;
-import com.hanyanan.tools.schedule.network.HttpStack;
-import com.hanyanan.tools.schedule.network.HurlStack;
-import com.hanyanan.tools.schedule.network.NetworkError;
-import com.hanyanan.tools.schedule.network.NetworkRequest;
+import com.hanyanan.tools.schedule.http.HttpExecutor;
+import com.hanyanan.tools.schedule.http.NetworkError;
+import com.hanyanan.tools.schedule.http.NetworkRequest;
 
 import java.io.File;
 import java.io.IOException;
@@ -107,7 +108,7 @@ public class TestDiskCacheThread extends Thread{
             e.printStackTrace();
             return ;
         }
-        DownloadRequestExecutor  executor = new DownloadRequestExecutor(new HurlStack());
+        DownloadRequestExecutor  executor = new DownloadRequestExecutor(new HttpConnectionExecutor());
         int count = 100;
         for(int i =0;i<count;++i){
             DownloadRequest nr = new DownloadRequest(urls[i%urls.length],fixSizeDiskStorage,""+i,executor,null);
@@ -130,16 +131,16 @@ public class TestDiskCacheThread extends Thread{
     };
 
     public static class DownloadRequestExecutor implements RequestExecutor<String,DownloadRequest> {
-        private final HttpStack mHttpStack;
-        public DownloadRequestExecutor(HttpStack httpStack){
-            mHttpStack = httpStack;
+        private final HttpExecutor mHttpExecutor;
+        public DownloadRequestExecutor(HttpExecutor httpExecutor){
+            mHttpExecutor = httpExecutor;
         }
         @Override
         public Response<String> performRequest(DownloadRequest  request) throws XError{
             Log.d(TAG, "performRequest "+request.getKey());
             byte[] buff = new byte[4098];
             try {
-                InputStream inputStream = mHttpStack.performStreamRequest(request, request.getParams());
+                InputStream inputStream = mHttpExecutor.performStreamRequest(request, request.getParams());
                 Log.d(TAG, "performRequest InputStream "+inputStream);
                 IStreamStorage.Editor editor = request.getFixSizeDiskStorage().edit(request.getKey());
                 Log.d(TAG, "performRequest editor "+editor);

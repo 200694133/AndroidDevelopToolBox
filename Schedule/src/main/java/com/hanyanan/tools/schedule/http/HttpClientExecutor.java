@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hanyanan.tools.schedule.network;
+package com.hanyanan.tools.schedule.http;
 
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
@@ -40,12 +40,12 @@ import java.util.Map;
 /**
  * An HttpStack that performs request over an {@link org.apache.http.client.HttpClient}.
  */
-public class HttpClientStack implements HttpStack {
+public class HttpClientExecutor implements HttpExecutor {
     protected final HttpClient mClient;
 
     private final static String HEADER_CONTENT_TYPE = "Content-Type";
 
-    public HttpClientStack(HttpClient client) {
+    public HttpClientExecutor(HttpClient client) {
         mClient = client;
     }
 

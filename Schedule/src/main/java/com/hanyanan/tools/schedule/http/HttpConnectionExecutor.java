@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hanyanan.tools.schedule.network;
+package com.hanyanan.tools.schedule.http;
 
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
@@ -38,9 +38,9 @@ import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLSocketFactory;
 
 /**
- * An {@link HttpStack} based on {@link java.net.HttpURLConnection}.
+ * An {@link HttpExecutor} based on {@link java.net.HttpURLConnection}.
  */
-public class HurlStack implements HttpStack {
+public class HttpConnectionExecutor implements HttpExecutor {
 
     private static final String HEADER_CONTENT_TYPE = "Content-Type";
 
@@ -60,14 +60,14 @@ public class HurlStack implements HttpStack {
     private final UrlRewriter mUrlRewriter;
     private final SSLSocketFactory mSslSocketFactory;
 
-    public HurlStack() {
+    public HttpConnectionExecutor() {
         this(null);
     }
 
     /**
      * @param urlRewriter Rewriter to use for request URLs
      */
-    public HurlStack(UrlRewriter urlRewriter) {
+    public HttpConnectionExecutor(UrlRewriter urlRewriter) {
         this(urlRewriter, null);
     }
 
@@ -75,7 +75,7 @@ public class HurlStack implements HttpStack {
      * @param urlRewriter Rewriter to use for request URLs
      * @param sslSocketFactory SSL factory to use for HTTPS connections
      */
-    public HurlStack(UrlRewriter urlRewriter, SSLSocketFactory sslSocketFactory) {
+    public HttpConnectionExecutor(UrlRewriter urlRewriter, SSLSocketFactory sslSocketFactory) {
         mUrlRewriter = urlRewriter;
         mSslSocketFactory = sslSocketFactory;
     }

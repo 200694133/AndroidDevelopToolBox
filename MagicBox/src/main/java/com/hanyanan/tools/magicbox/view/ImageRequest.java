@@ -1,19 +1,13 @@
 package com.hanyanan.tools.magicbox.view;
 
 import android.graphics.Bitmap;
-import android.os.Environment;
 
 import com.hanyanan.tools.magicbox.MagicApplication;
-import com.hanyanan.tools.schedule.Request;
-import com.hanyanan.tools.schedule.RequestExecutor;
 import com.hanyanan.tools.schedule.Response;
 import com.hanyanan.tools.schedule.ResponseDelivery;
-import com.hanyanan.tools.schedule.RetryPolicy;
-import com.hanyanan.tools.schedule.network.NetworkRequest;
+import com.hanyanan.tools.schedule.http.NetworkRequest;
 import com.hanyanan.tools.storage.disk.FixSizeDiskStorage;
 
-import java.io.File;
-import java.io.IOException;
 import java.util.HashMap;
 
 /**

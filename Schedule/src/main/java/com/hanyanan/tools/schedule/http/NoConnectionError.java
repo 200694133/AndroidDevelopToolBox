@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hanyanan.tools.schedule.network;
+package com.hanyanan.tools.schedule.http;
 
 /**
  * Error indicating that no connection could be established when performing a Volley request.

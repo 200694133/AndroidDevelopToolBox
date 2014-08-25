@@ -14,21 +14,14 @@
  * limitations under the License.
  */
 
-package com.hanyanan.tools.schedule.network;
-
+package com.hanyanan.tools.schedule.http;
 
 /**
- * Indicates that the server's response could not be parsed.
+ * Indicates that the connection or the socket timed out.
  */
 @SuppressWarnings("serial")
-public class ParseError extends NetworkError {
-    public ParseError() { }
-
-    public ParseError(NetworkResponse networkResponse) {
-        super(networkResponse);
-    }
-
-    public ParseError(Throwable cause) {
-        super(cause);
+public class TimeoutError extends NetworkError {
+    public TimeoutError(String exceptionMessage) {
+        super(exceptionMessage);
     }
 }

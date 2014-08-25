@@ -14,14 +14,18 @@
  * limitations under the License.
  */
 
-package com.hanyanan.tools.schedule.network;
+package com.hanyanan.tools.schedule.http;
+import com.hanyanan.tools.schedule.XError;
 
 /**
- * Indicates that the connection or the socket timed out.
+ * An interface for performing requests.
  */
-@SuppressWarnings("serial")
-public class TimeoutError extends NetworkError {
-    public TimeoutError(String exceptionMessage) {
-        super(exceptionMessage);
-    }
+public interface Network {
+    /**
+     * Performs the specified request.
+     * @param request Request to process
+     * @return A {@link NetworkResponse} with data and caching metadata; will never be null
+     * @throws XError on errors
+     */
+    public NetworkResponse performRequest(NetworkRequest<?> request) throws XError;
 }

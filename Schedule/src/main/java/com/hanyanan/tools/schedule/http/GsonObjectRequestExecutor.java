@@ -1,40 +1,40 @@
-package com.hanyanan.tools.schedule.network;
+package com.hanyanan.tools.schedule.http;
 
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 import com.hanyanan.tools.schedule.RequestExecutor;
 import com.hanyanan.tools.schedule.Response;
 import com.hanyanan.tools.schedule.XError;
-
-import org.json.JSONArray;
-import org.json.JSONException;
 
 import java.io.UnsupportedEncodingException;
 
 /**
  * Created by hanyanan on 2014/7/30.
  */
-public class JsonArrayRequestExecutor implements RequestExecutor<JSONArray, NetworkRequest<JSONArray>> {
+public class GsonObjectRequestExecutor<T> implements RequestExecutor<T, NetworkRequest<T>> {
     /** Charset for request. */
     private static final String PROTOCOL_CHARSET = "utf-8";
 
     /** Content type for request. */
     private static final String PROTOCOL_CONTENT_TYPE = "application/json; charset=";
     private final Network mNetwork;
-    public JsonArrayRequestExecutor(Network network){
+    public GsonObjectRequestExecutor(Network network){
         mNetwork = network;
     }
     @Override
-    public Response<JSONArray> performRequest(NetworkRequest<JSONArray> request) throws XError {
+    public Response<T> performRequest(NetworkRequest<T> request) throws XError {
         request.setBodyContentType(PROTOCOL_CONTENT_TYPE);
         request.setPramsEncoding(PROTOCOL_CHARSET);
         NetworkResponse res = mNetwork.performRequest(request);
         try {
+            Gson gson = new Gson();
+
             String jsonString =
                     new String(res.data, StringRequestExecutor.parseCharset(res.headers));
-            return Response.success(new JSONArray(jsonString));
+            T t = (T)gson.fromJson(jsonString, new TypeToken<T>() {}.getType());
+            return Response.success(t);
         } catch (UnsupportedEncodingException e) {
             return Response.error(new ParseError(e));
-        } catch (JSONException je) {
-            return Response.error(new ParseError(je));
         }
     }
 }

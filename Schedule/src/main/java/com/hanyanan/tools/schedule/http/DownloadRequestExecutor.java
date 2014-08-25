@@ -1,6 +1,4 @@
-package com.hanyanan.tools.schedule.network;
-
-import android.util.Log;
+package com.hanyanan.tools.schedule.http;
 
 import com.hanyanan.tools.schedule.RequestExecutor;
 import com.hanyanan.tools.schedule.Response;
@@ -9,21 +7,20 @@ import com.hanyanan.tools.schedule.XError;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 
 /**
  * Created by hanyanan on 2014/7/31.
  */
 public class DownloadRequestExecutor implements RequestExecutor<String,NetworkRequest<String>> {
-    private final HttpStack mHttpStack;
-    public DownloadRequestExecutor(HttpStack httpStack){
-        mHttpStack = httpStack;
+    private final HttpExecutor mHttpExecutor;
+    public DownloadRequestExecutor(HttpExecutor httpExecutor){
+        mHttpExecutor = httpExecutor;
     }
 
     @Override
     public Response<String> performRequest(NetworkRequest<String> request) throws XError {
         try {
-            InputStream inputStream = mHttpStack.performStreamRequest(request, request.getParams());
+            InputStream inputStream = mHttpExecutor.performStreamRequest(request, request.getParams());
         } catch (IOException e) {
             e.printStackTrace();
             throw new NetworkError(e);
