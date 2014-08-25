@@ -1,12 +1,11 @@
 package com.hanyanan.tools.magicbox.view;
 
 import android.graphics.Bitmap;
-
 import com.hanyanan.tools.magicbox.MagicApplication;
 import com.hanyanan.tools.schedule.Response;
 import com.hanyanan.tools.schedule.ResponseDelivery;
 import com.hanyanan.tools.schedule.http.NetworkRequest;
-import com.hanyanan.tools.storage.disk.FixSizeDiskStorage;
+import com.hanyanan.tools.storage.disk.DiskStorage;
 
 import java.util.HashMap;
 
@@ -25,7 +24,7 @@ class ImageRequest extends NetworkRequest<Bitmap> {
         mMaxHeight = height;
     }
 
-    public FixSizeDiskStorage getFixSizeDiskStorage(){
+    public DiskStorage getFixSizeDiskStorage(){
         MagicApplication mApp = MagicApplication.getInstance();
         if(null == mApp) return null;
         return mApp.getFixSizeDiskStorage();

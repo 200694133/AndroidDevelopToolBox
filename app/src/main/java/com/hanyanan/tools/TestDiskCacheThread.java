@@ -4,11 +4,8 @@ import android.content.Context;
 import android.os.Environment;
 import android.os.Looper;
 import android.util.Log;
-
 import com.hanyanan.tools.schedule.http.HttpConnectionExecutor;
 import com.hanyanan.tools.storage.Error.BusyInUsingError;
-import com.hanyanan.tools.storage.disk.IStreamStorage;
-import com.hanyanan.tools.storage.disk.FixSizeDiskStorage;
 import com.hanyanan.tools.schedule.RequestExecutor;
 import com.hanyanan.tools.schedule.RequestQueue;
 import com.hanyanan.tools.schedule.Response;
@@ -16,6 +13,8 @@ import com.hanyanan.tools.schedule.XError;
 import com.hanyanan.tools.schedule.http.HttpExecutor;
 import com.hanyanan.tools.schedule.http.NetworkError;
 import com.hanyanan.tools.schedule.http.NetworkRequest;
+import com.hanyanan.tools.storage.disk.DiskStorage;
+import com.hanyanan.tools.storage.disk.LimitedSizeDiskStorage;
 
 import java.io.File;
 import java.io.IOException;
@@ -98,16 +97,11 @@ public class TestDiskCacheThread extends Thread{
         RequestQueue requestQueue = new RequestQueue(4);
         requestQueue.start();
         Log.d(TAG, "create RequestQueue 4");
-        FixSizeDiskStorage fixSizeDiskStorage = null;
-        try {
-            File file = new File(Environment.getExternalStorageDirectory().getAbsolutePath()+"/T/");
-            Log.d(TAG, "disk cache path "+file.getAbsolutePath());
-            fixSizeDiskStorage = FixSizeDiskStorage.open(file,1,50 * 1024 * 1024);
-            Log.d(TAG, "create disk cache Success" );
-        } catch (IOException e) {
-            e.printStackTrace();
-            return ;
-        }
+        DiskStorage fixSizeDiskStorage = null;
+        File file = new File(Environment.getExternalStorageDirectory().getAbsolutePath()+"/T/");
+        Log.d(TAG, "disk cache path "+file.getAbsolutePath());
+        fixSizeDiskStorage = LimitedSizeDiskStorage.open(file, 50 * 1024 * 1024);
+        Log.d(TAG, "create disk cache Success" );
         DownloadRequestExecutor  executor = new DownloadRequestExecutor(new HttpConnectionExecutor());
         int count = 100;
         for(int i =0;i<count;++i){
@@ -117,17 +111,17 @@ public class TestDiskCacheThread extends Thread{
     }
 
     public static class DownloadRequest extends NetworkRequest<String>{
-        private final FixSizeDiskStorage mFixSizeDiskStorage;
+        private final DiskStorage mFixSizeDiskStorage;
         private final String mKey;
 
-        public DownloadRequest(String url,FixSizeDiskStorage fixSizeDiskStorage,String key,
+        public DownloadRequest(String url,DiskStorage fixSizeDiskStorage,String key,
                                DownloadRequestExecutor requestExecutor, Response.ErrorListener listener) {
             super(url, null, requestExecutor, null, listener);
             mFixSizeDiskStorage = fixSizeDiskStorage;
             mKey = key;
         }
         public String getKey(){return mKey;}
-        public FixSizeDiskStorage getFixSizeDiskStorage(){return mFixSizeDiskStorage;}
+        public DiskStorage getFixSizeDiskStorage(){return mFixSizeDiskStorage;}
     };
 
     public static class DownloadRequestExecutor implements RequestExecutor<String,DownloadRequest> {
@@ -137,35 +131,36 @@ public class TestDiskCacheThread extends Thread{
         }
         @Override
         public Response<String> performRequest(DownloadRequest  request) throws XError{
-            Log.d(TAG, "performRequest "+request.getKey());
-            byte[] buff = new byte[4098];
-            try {
-                InputStream inputStream = mHttpExecutor.performStreamRequest(request, request.getParams());
-                Log.d(TAG, "performRequest InputStream "+inputStream);
-                IStreamStorage.Editor editor = request.getFixSizeDiskStorage().edit(request.getKey());
-                Log.d(TAG, "performRequest editor "+editor);
-                if(null == editor){
-                    return Response.error(new XError());
-                }
-                OutputStream out = editor.newOutputStream();
-                int l = 0;
-                while((l=inputStream.read(buff))>0){
-                    out.write(buff,0,l);
-                }
-                inputStream.close();
-                out.close();
-                editor.commit();
-                editor.close();
-                Log.d(TAG, "download "+request.getKey()+"    "+request.getUrl()+"  success");
-                return Response.success(request.getKey());
-            } catch (IOException e) {
-                Log.d(TAG, "download "+request.getKey()+"    "+request.getUrl()+"  failed "+e.toString());
-                e.printStackTrace();
-                throw new NetworkError(e);
-            }catch(BusyInUsingError error){
-                Log.d(TAG, "download "+request.getKey()+"    "+request.getUrl()+"  failed "+error.toString());
-                throw new NetworkError(error);
-            }
+            return null;
+//            Log.d(TAG, "performRequest "+request.getKey());
+//            byte[] buff = new byte[4098];
+//            try {
+//                InputStream inputStream = mHttpExecutor.performStreamRequest(request, request.getParams());
+//                Log.d(TAG, "performRequest InputStream "+inputStream);
+//                IStreamStorage.Editor editor = request.getFixSizeDiskStorage().edit(request.getKey());
+//                Log.d(TAG, "performRequest editor "+editor);
+//                if(null == editor){
+//                    return Response.error(new XError());
+//                }
+//                OutputStream out = editor.newOutputStream();
+//                int l = 0;
+//                while((l=inputStream.read(buff))>0){
+//                    out.write(buff,0,l);
+//                }
+//                inputStream.close();
+//                out.close();
+//                editor.commit();
+//                editor.close();
+//                Log.d(TAG, "download "+request.getKey()+"    "+request.getUrl()+"  success");
+//                return Response.success(request.getKey());
+//            } catch (IOException e) {
+//                Log.d(TAG, "download "+request.getKey()+"    "+request.getUrl()+"  failed "+e.toString());
+//                e.printStackTrace();
+//                throw new NetworkError(e);
+//            }catch(BusyInUsingError error){
+//                Log.d(TAG, "download "+request.getKey()+"    "+request.getUrl()+"  failed "+error.toString());
+//                throw new NetworkError(error);
+//            }
         }
     };
 }

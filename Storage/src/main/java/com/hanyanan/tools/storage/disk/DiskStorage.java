@@ -126,6 +126,13 @@ public interface DiskStorage {
      */
     boolean remove(String key);
 
+    /**
+     * Check if current storage contain wanted value/
+     * @param key the key to search
+     * @return true means that contain the wanted, others wise it's not.
+     */
+    boolean contains(String key);
+
     /** Closes disk storage, releases resources. */
     void close();
 

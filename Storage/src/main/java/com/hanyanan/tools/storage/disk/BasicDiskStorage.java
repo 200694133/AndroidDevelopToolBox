@@ -63,6 +63,7 @@ class BasicDiskStorage implements DiskStorage{
     public InputStream getInputStream(String key) {
         try {
             IStreamStorage.Snapshot snapShot = mStreamStorage.get(key);
+            if(null == snapShot) return null;
             return new SafeInputStream(snapShot, snapShot.getInputStream());
         } catch (IOException e) {
             return null;
@@ -73,6 +74,7 @@ class BasicDiskStorage implements DiskStorage{
     public OutputStream getOutputStream(String key) {
         try {
             IStreamStorage.Editor editor = mStreamStorage.edit(key);
+            if(null == editor) return null;
             return new SafeOutputStream(editor,editor.newOutputStream());
         } catch (IOException e) {
             e.printStackTrace();
@@ -98,6 +100,7 @@ class BasicDiskStorage implements DiskStorage{
             busyInUsingError.printStackTrace();
             return false;
         }
+        if(null == editor) return false;
         OutputStream outputStream = editor.newOutputStream();
         if(null == outputStream){
             editor.close();
@@ -128,6 +131,7 @@ class BasicDiskStorage implements DiskStorage{
             busyInUsingError.printStackTrace();
             return false;
         }
+        if(null == editor) return false;
         OutputStream outputStream = editor.newOutputStream();
         if(null == outputStream){
             editor.close();
@@ -151,7 +155,11 @@ class BasicDiskStorage implements DiskStorage{
         IStreamStorage.Editor editor = null;
         try {
             editor = mStreamStorage.edit(key);
+            if(null == editor) return false;
             OutputStream outputStream = editor.newOutputStream();
+            if(null == outputStream){
+                return false;
+            }
             ObjectOutputStream out = new ObjectOutputStream(outputStream);
             out.writeObject(serializable);
             out.close();
@@ -171,6 +179,7 @@ class BasicDiskStorage implements DiskStorage{
         InputStream inputStream = null;
         try {
             inputStream = getInputStream(key);
+            if(null == inputStream) return null;
             ObjectInputStream in = new ObjectInputStream(inputStream);
 
             T content = (T)in.readObject();

@@ -153,17 +153,10 @@ public class Utils {
      */
     public static void copy(InputStream in, OutputStream out, int length, int buffSize) throws IOException{
         final byte[] bytes = new byte[buffSize];
-        int leave = length;
-        int block = leave > buffSize?buffSize:leave;
         int read = 0;
-        while(true){
-            read = in.read(bytes, 0, block);
+        while((read=in.read(bytes))>0){
             out.write(bytes, 0, read);
-            leave -= read;
-            if(read ==0 || leave==0 || read< block){
-                break;
-            }
-            block = leave > buffSize?buffSize:leave;
         }
+        out.flush();
     }
 }

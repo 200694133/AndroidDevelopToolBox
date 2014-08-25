@@ -6,7 +6,8 @@ import android.os.Environment;
 import android.util.LruCache;
 
 import com.hanyanan.tools.schedule.RequestQueue;
-import com.hanyanan.tools.storage.disk.FixSizeDiskStorage;
+import com.hanyanan.tools.storage.disk.DiskStorage;
+import com.hanyanan.tools.storage.disk.LimitedSizeDiskStorage;
 
 import java.io.File;
 import java.io.IOException;
@@ -20,7 +21,7 @@ public class MagicApplication extends Application {
     private static final int M = 1024 * 1024;
     private RequestQueue mRequestQueue = null;
     private LruCache<String, Bitmap> mBitmapLruCache = null;
-    private FixSizeDiskStorage mTemporaryDiskCache;
+    private DiskStorage mTemporaryDiskCache;
     public static MagicApplication getInstance(){
         return sInstance.get();
     }
@@ -47,15 +48,11 @@ public class MagicApplication extends Application {
      * Lazy init the disk cache.
      * @return disk cache
      */
-    public synchronized FixSizeDiskStorage getFixSizeDiskStorage(){
+    public synchronized DiskStorage getFixSizeDiskStorage(){
         if(null == mTemporaryDiskCache){
             String packageName = getPackageName();
             File cacheDir = new File(Environment.getExternalStorageDirectory(),"data/"+packageName+"/cache");
-            try {
-                mTemporaryDiskCache = FixSizeDiskStorage.open(cacheDir, 1, 200 * M);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+            mTemporaryDiskCache = LimitedSizeDiskStorage.open(cacheDir, 200 * M);
         }
         return mTemporaryDiskCache;
     }
