@@ -4,7 +4,8 @@ package com.hanyanan.tools.schedule;
  * Retry policy for a request.
  */
 public interface RetryPolicy {
-
+    public static final int DEFAULT_TIME_OUT = 5000;
+    public static final int DEFAULT_MAX_COUNT = 3;
     /**
      * Returns the current timeout (used for logging).
      */

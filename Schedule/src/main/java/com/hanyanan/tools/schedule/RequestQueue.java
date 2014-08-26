@@ -30,12 +30,17 @@ public class RequestQueue {
     /** Number of network request dispatcher threads to start. */
     private static final int DEFAULT_TASK_THREAD_POOL_SIZE = 4;
 
-
-    /** The network dispatchers. */
+    /** The request dispatchers. */
     private final RequestDispatcher[] mRequestDispatchers;
 
     /** Default response delivery mechanism. */
     private final ResponseDelivery mDelivery;
+
+    /** default retry policy, it's not support retry in default mode. */
+    private final RetryPolicy mDefaultRetryPolicy;
+
+    /** default global error listener. */
+    private Response.ErrorListener mDefaultErrorListener;
     /**
      * Creates the worker pool. Processing will not begin until {@link #start()} is called.
      *
@@ -43,7 +48,8 @@ public class RequestQueue {
      */
     public RequestQueue(RequestDispatcher[] requestDispatchers) {
         mRequestDispatchers = requestDispatchers;
-        mDelivery = new DefaultResponseDelivery(new Handler());//TODO
+        mDelivery = new DefaultResponseDelivery(new Handler());
+        mDefaultRetryPolicy = new TimesRetryPolicy(0);
     }
 
     /**
@@ -52,7 +58,8 @@ public class RequestQueue {
      * @param requestDispatchersCount the count of threads for running background request
      */
     public RequestQueue(int requestDispatchersCount) {
-        mDelivery = new DefaultResponseDelivery(new Handler());//TODO
+        mDelivery = new DefaultResponseDelivery(new Handler());
+        mDefaultRetryPolicy = new TimesRetryPolicy(0);
         mRequestDispatchers = new RequestDispatcher[requestDispatchersCount];
         for(int i =0;i<requestDispatchersCount;++i){
             mRequestDispatchers[i] = new RequestDispatcher(mRequestQueue, null, mDelivery);
@@ -85,6 +92,29 @@ public class RequestQueue {
         }
     }
 
+    /**
+     * Get default response delivery, which used to delivery response.
+     * @return global response delivery
+     */
+    public ResponseDelivery getDefaultResponseDelivery(){
+        return mDelivery;
+    }
+
+    /**
+     * Get default retry policy
+     * @return default retry policy
+     */
+    public RetryPolicy getDefaultRetryPolicy(){
+        return mDefaultRetryPolicy;
+    }
+
+    /**
+     * Get default error listener.
+     * @return default error listener
+     */
+    public Response.ErrorListener getDefaultErrorListener(){
+        return mDefaultErrorListener;
+    }
     /**
      * Gets a sequence number.
      */
@@ -134,7 +164,7 @@ public class RequestQueue {
      * @param request The request to service
      * @return The passed-in request
      */
-    public <T> Request<T> add(Request<T> request) {
+    public Request add(Request request) {
         // Tag the request as belonging to this queue and add it to the set of current requests.
 //        request.setRequestQueue(this);
         synchronized (mRequestQueue) {

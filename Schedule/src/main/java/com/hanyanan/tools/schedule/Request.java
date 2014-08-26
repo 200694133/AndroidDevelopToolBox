@@ -1,15 +1,14 @@
 package com.hanyanan.tools.schedule;
 
-import android.os.Handler;
 import android.util.Log;
 
 /**
  * Created by hanyanan on 2014/7/29.
  */
-public abstract class Request<T> implements Comparable<Request<T>>{
+public abstract class Request<P extends RequestParam> implements Comparable<Request>{
     /** Listener interface for errors. */
-    private Response.ErrorListener mErrorListener;
-    private Response.Listener<T> mResultListener;
+    protected Response.ErrorListener mErrorListener;
+    protected Response.Listener mResultListener;
     private static int sSequence = 0;
     /** Sequence number of this request, used to enforce FIFO ordering. */
     private Integer mSequence = new Integer(sSequence++);
@@ -37,33 +36,37 @@ public abstract class Request<T> implements Comparable<Request<T>>{
         Finish
     }
     /** Whether or not a response has been delivered for this request yet. */
-    private boolean mResponseDelivered = false;
+    protected boolean mResponseDelivered = false;
     // A cheap variant of request tracing used to dump slow requests.
-    private long mRequestBirthTime = 0;
+    protected long mRequestBirthTime = 0;
     private Status mStatus = Status.IDLE;
     /** Current request executor. #{@see RequestExecutor.performRequest}. */
-    private final RequestExecutor mRequestExecutor;
+    protected final RequestExecutor mRequestExecutor;
     /** retry policy used to retry current request when request failed occurred. */
-    private final RetryPolicy mRetryPolicy;
+    protected final RetryPolicy mRetryPolicy;
     /** used to delivery response. */
-    private final ResponseDelivery mResponseDelivery;
+    protected final ResponseDelivery mResponseDelivery;
     /** An opaque token tagging this request; used for bulk cancellation. */
-    private Object mTag;
+    protected Object mTag;
 
     /** The priority of this request. */
-    private Priority mPriority = Priority.NORMAL;
+    protected Priority mPriority = Priority.NORMAL;
 
     /** The cache policy of this request to indicate if need cache the terminal response. */
-    private CachePolicy mCachePolicy;
+    protected CachePolicy mCachePolicy;
+    /**  Bind a request queue. */
+    protected final RequestQueue mRequestQueue;
 
+    protected P mRequestParam;
     /**
      * Creates a new request with the given RequestExecutor, RetryPolicy, ResponseDelivery and
      * error listener.  Note that the normal response listener is not provided here as
      * delivery of responses is provided by subclasses, who have a better idea of how to deliver
      * an already-parsed response.
      */
-    public Request(RequestExecutor requestExecutor, ResponseDelivery responseDelivery,
+    public Request(RequestQueue requestQueue,RequestExecutor requestExecutor, ResponseDelivery responseDelivery,
                    RetryPolicy retryPolicy, Response.ErrorListener listener) {
+        mRequestQueue = requestQueue;
         mErrorListener = listener;
         mResponseDelivery = responseDelivery;
         mRequestExecutor = requestExecutor;
@@ -73,35 +76,47 @@ public abstract class Request<T> implements Comparable<Request<T>>{
 //        mDefaultTrafficStatsTag = findDefaultTrafficStatsTag(url);
     }
 
-    public Request(RequestExecutor requestExecutor, Response.ErrorListener listener) {
-        mErrorListener = listener;
-        mResponseDelivery = new DefaultResponseDelivery(new Handler());
+    public Request(RequestQueue requestQueue, RequestExecutor requestExecutor,P param) {
+        mRequestQueue = requestQueue;
+        mResponseDelivery = requestQueue.getDefaultResponseDelivery();
         mRequestExecutor = requestExecutor;
-        mRetryPolicy = new DefaultRetryPolicy();
+        mRetryPolicy = requestQueue.getDefaultRetryPolicy();
         mRequestBirthTime = System.currentTimeMillis();
+        setRequestParam(param);
+        setErrorListener(requestQueue.getDefaultErrorListener());
         setStatus(Status.Pending);
     }
-    public RequestExecutor getRequestExecutor(){
+
+    public final RequestExecutor getRequestExecutor(){
         return mRequestExecutor;
     }
-    public ResponseDelivery getResponseDelivery(){
+    public final ResponseDelivery getResponseDelivery(){
         return mResponseDelivery;
     }
-    public void setStatus(Status status){
+    public final void setStatus(Status status){
         mStatus = status;
     }
-    public Status getStatus(){
+    public final Status getStatus(){
         return mStatus;
     }
-    public void setListener(Response.Listener<T> l){
+    public final <T> Request setListener(Response.Listener<T> l){
         mResultListener = l;
+        return this;
     }
-    public void finish(final String info){
+    public final Request setErrorListener(Response.ErrorListener listener){
+        mErrorListener = listener;
+        return this;
+    }
+    public final Request setRequestParam(P requestParam){
+        mRequestParam = requestParam;
+        return this;
+    }
+    public final void finish(final String info){
         addMarker(info);
         //TODO
     }
 
-    public boolean isCanceled(){
+    public final boolean isCanceled(){
         return isCanceled;
     }
 
@@ -119,8 +134,9 @@ public abstract class Request<T> implements Comparable<Request<T>>{
         //TODO
     }
 
-    public void setCachePolicy(CachePolicy cachePolicy){
+    public Request setCachePolicy(CachePolicy cachePolicy){
         mCachePolicy = cachePolicy;
+        return this;
     }
 
     public CachePolicy getCachePolicy(){
@@ -132,7 +148,7 @@ public abstract class Request<T> implements Comparable<Request<T>>{
      *
      * @return This Request object to allow for chaining.
      */
-    public Request<?> setTag(Object tag) {
+    public Request setTag(Object tag) {
         mTag = tag;
         return this;
     }
@@ -150,11 +166,14 @@ public abstract class Request<T> implements Comparable<Request<T>>{
      *
      * @return This Request object to allow for chaining.
      */
-    public final Request<?> setSequence(int sequence) {
+    public final Request setSequence(int sequence) {
         mSequence = sequence;
         return this;
     }
 
+    public final void autoLoad(){
+        mRequestQueue.add(this);
+    }
 
     /**
      * Returns the sequence number of this request.
@@ -169,7 +188,7 @@ public abstract class Request<T> implements Comparable<Request<T>>{
     /**
      * Returns the {@link Priority} of this request; {@link Priority#NORMAL} by default.
      */
-    public Priority getPriority() {
+    public final Priority getPriority() {
         return mPriority;
     }
     /**
@@ -181,20 +200,20 @@ public abstract class Request<T> implements Comparable<Request<T>>{
     /**
      * Returns the retry policy that should be used  for  this request.
      */
-    public RetryPolicy getRetryPolicy() {
+    public final RetryPolicy getRetryPolicy() {
         return mRetryPolicy;
     }
     /**
      * Mark this request as having a response delivered on it.  This can be used
      * later in the request's lifetime for suppressing identical responses.
      */
-    public void markDelivered() {
+    public final void markDelivered() {
         mResponseDelivered = true;
     }
     /**
      * Returns true if this request has had a response delivered for it.
      */
-    public boolean hasHadResponseDelivered() {
+    public final boolean hasHadResponseDelivered() {
         return mResponseDelivered;
     }
     /**
@@ -203,7 +222,7 @@ public abstract class Request<T> implements Comparable<Request<T>>{
      * be non-null; responses that fail to parse are not delivered.
      * @param response The parsed response returned by
      */
-    public void deliverResponse(T response){
+    public <T> void deliverResponse(T response){
         if(null != mResultListener){
             mResultListener.onResponse(response);
         }

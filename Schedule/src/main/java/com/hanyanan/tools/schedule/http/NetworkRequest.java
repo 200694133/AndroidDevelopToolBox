@@ -2,6 +2,8 @@ package com.hanyanan.tools.schedule.http;
 
 import com.hanyanan.tools.schedule.Request;
 import com.hanyanan.tools.schedule.RequestExecutor;
+import com.hanyanan.tools.schedule.RequestParam;
+import com.hanyanan.tools.schedule.RequestQueue;
 import com.hanyanan.tools.schedule.Response;
 import com.hanyanan.tools.schedule.ResponseDelivery;
 
@@ -13,7 +15,7 @@ import java.util.Map;
 /**
  * Created by hanyanan on 2014/7/29.
  */
-public class NetworkRequest<T> extends Request<T>{
+public class NetworkRequest<P extends RequestParam> extends Request{
     /**
      * Default encoding for POST or PUT parameters. See {@link #getParamsEncoding()}.
      */
@@ -49,18 +51,18 @@ public class NetworkRequest<T> extends Request<T>{
      * Creates a new request with the given method (one of the values from {@link Method}),
      * URL, and so on....
      */
-    public NetworkRequest(String url, int method, HashMap<String, String> params,
+    public NetworkRequest(RequestQueue requestQueue,String url, int method, HashMap<String, String> params,
                           RequestExecutor  requestExecutor,
                           ResponseDelivery responseDelivery, Response.ErrorListener listener) {
-        super(requestExecutor, responseDelivery, new NetworkRetryPolicy(), listener);
+        super(requestQueue,requestExecutor, responseDelivery, new NetworkRetryPolicy(), listener);
         mParams = params;
         mUrl = url;
         mMethod = method;
     }
-    public NetworkRequest(String url, HashMap<String, String> params,
+    public NetworkRequest(RequestQueue requestQueue,String url, HashMap<String, String> params,
                           RequestExecutor  requestExecutor,
                           ResponseDelivery responseDelivery, Response.ErrorListener listener) {
-        this(url, Method.GET,params,requestExecutor,responseDelivery, listener);
+        this(requestQueue,url, Method.GET,params,requestExecutor,responseDelivery, listener);
     }
 
 //    public NetworkRequest(String url, FixSizeDiskStorage fixSizeDiskStorage, String s, RequestExecutor<T, NetworkRequest<T>> requestExecutor,
