@@ -5,21 +5,16 @@ import android.os.Environment;
 import android.os.Looper;
 import android.util.Log;
 import com.hanyanan.tools.schedule.http.HttpConnectionExecutor;
-import com.hanyanan.tools.storage.Error.BusyInUsingError;
 import com.hanyanan.tools.schedule.RequestExecutor;
 import com.hanyanan.tools.schedule.RequestQueue;
 import com.hanyanan.tools.schedule.Response;
 import com.hanyanan.tools.schedule.XError;
 import com.hanyanan.tools.schedule.http.HttpExecutor;
-import com.hanyanan.tools.schedule.http.NetworkError;
 import com.hanyanan.tools.schedule.http.NetworkRequest;
 import com.hanyanan.tools.storage.disk.DiskStorage;
 import com.hanyanan.tools.storage.disk.LimitedSizeDiskStorage;
-
 import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+
 
 /**
  * Created by hanyanan on 2014/8/6.
@@ -110,7 +105,7 @@ public class TestDiskCacheThread extends Thread{
         }
     }
 
-    public static class DownloadRequest extends NetworkRequest<String>{
+    public static class DownloadRequest extends NetworkRequest{
         private final DiskStorage mFixSizeDiskStorage;
         private final String mKey;
 

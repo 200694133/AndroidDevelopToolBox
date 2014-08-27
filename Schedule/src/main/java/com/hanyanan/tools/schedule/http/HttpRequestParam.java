@@ -46,6 +46,7 @@ public class HttpRequestParam implements RequestParam{
     private final HashMap<String,String> mUrlParams = new HashMap<String, String>();
 
     private FileWrapper mFileWrapper;
+    private StreamWrapper mStreamWrapper;
     public HttpRequestParam(String url){
         mUrl = url;
     }
@@ -55,20 +56,24 @@ public class HttpRequestParam implements RequestParam{
         return this;
     }
 
-    public HttpRequestParam setInputStream(InputStream inputStream){
-        mInputStream = inputStream;
+    public HttpRequestParam setInputStream(String name,InputStream inputStream){
+        mStreamWrapper = StreamWrapper.newInstance(inputStream,name,APPLICATION_OCTET_STREAM,true);
         return this;
     }
 
-    public HttpRequestParam setUploadFile(TransactionType type, File file){
-
-        mUploadFile = file;
+    public HttpRequestParam setUploadFile(File file){
+        mFileWrapper = new FileWrapper(file, APPLICATION_OCTET_STREAM);
         return this;
     }
 
     public HttpRequestParam putUrlParam(String key, String value){
         mUrlParams.put(key, value);
         return this;
+    }
+
+    public String parseUrlParam(){
+        return "";
+        //TODO
     }
 
     private byte[] parseRequestHeader(){
@@ -110,6 +115,8 @@ public class HttpRequestParam implements RequestParam{
         public FileWrapper(File file, String contentType) {
             this.file = file;
             this.contentType = contentType;
+            mOffset = 0;
+            mSize = mLength = file.length();
         }
     }
     public static class StreamWrapper {
