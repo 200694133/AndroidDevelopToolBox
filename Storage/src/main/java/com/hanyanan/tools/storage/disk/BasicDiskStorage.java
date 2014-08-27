@@ -206,6 +206,11 @@ class BasicDiskStorage implements DiskStorage{
     }
 
     @Override
+    public boolean contains(String key) {
+        return mStreamStorage.contain(key);
+    }
+
+    @Override
     public void close() {
         try {
             mStreamStorage.close();

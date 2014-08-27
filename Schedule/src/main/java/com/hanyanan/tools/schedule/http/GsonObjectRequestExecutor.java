@@ -11,7 +11,7 @@ import java.io.UnsupportedEncodingException;
 /**
  * Created by hanyanan on 2014/7/30.
  */
-public class GsonObjectRequestExecutor<T> implements RequestExecutor<T, NetworkRequest<T>> {
+public class GsonObjectRequestExecutor<T> implements RequestExecutor<T, NetworkRequest> {
     /** Charset for request. */
     private static final String PROTOCOL_CHARSET = "utf-8";
 
@@ -22,7 +22,7 @@ public class GsonObjectRequestExecutor<T> implements RequestExecutor<T, NetworkR
         mNetwork = network;
     }
     @Override
-    public Response<T> performRequest(NetworkRequest<T> request) throws XError {
+    public Response<T> performRequest(NetworkRequest request) throws XError {
         request.setBodyContentType(PROTOCOL_CONTENT_TYPE);
         request.setPramsEncoding(PROTOCOL_CHARSET);
         NetworkResponse res = mNetwork.performRequest(request);

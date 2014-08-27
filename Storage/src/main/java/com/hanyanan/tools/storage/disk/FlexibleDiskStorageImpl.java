@@ -69,6 +69,13 @@ class FlexibleDiskStorageImpl implements IStreamStorage {
         return directory;
     }
 
+    @Override
+    public boolean contain(String key) {
+        synchronized (this){
+            return lruEntries.containsKey(key);
+        }
+    }
+
     protected void onEntryChanged(String key, long oldLength, long currLength){
         mCurrentSize -= oldLength;
         mCurrentSize += currLength;

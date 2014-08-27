@@ -12,13 +12,13 @@ import java.util.Map;
 /**
  * Created by hanyanan on 2014/7/30.
  */
-public class StringRequestExecutor implements RequestExecutor<String, NetworkRequest<String>> {
+public class StringRequestExecutor implements RequestExecutor<String, NetworkRequest> {
     private final Network mNetwork;
     public StringRequestExecutor(Network network){
         mNetwork = network;
     }
     @Override
-    public Response<String> performRequest(NetworkRequest<String> request) throws XError {
+    public Response<String> performRequest(NetworkRequest request) throws XError {
         NetworkResponse res = mNetwork.performRequest(request);
         String parsed;
         try {

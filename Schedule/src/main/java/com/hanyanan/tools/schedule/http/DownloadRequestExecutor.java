@@ -11,14 +11,14 @@ import java.io.InputStream;
 /**
  * Created by hanyanan on 2014/7/31.
  */
-public class DownloadRequestExecutor implements RequestExecutor<String,NetworkRequest<String>> {
+public class DownloadRequestExecutor implements RequestExecutor<String,NetworkRequest> {
     private final HttpExecutor mHttpExecutor;
     public DownloadRequestExecutor(HttpExecutor httpExecutor){
         mHttpExecutor = httpExecutor;
     }
 
     @Override
-    public Response<String> performRequest(NetworkRequest<String> request) throws XError {
+    public Response<String> performRequest(NetworkRequest request) throws XError {
         try {
             InputStream inputStream = mHttpExecutor.performStreamRequest(request, request.getParams());
         } catch (IOException e) {

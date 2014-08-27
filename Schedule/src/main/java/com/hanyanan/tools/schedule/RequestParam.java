@@ -5,5 +5,4 @@ package com.hanyanan.tools.schedule;
  * It's request param.
  */
 public interface RequestParam {
-    void put(String key, String value);
 }

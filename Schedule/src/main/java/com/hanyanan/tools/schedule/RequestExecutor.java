@@ -4,7 +4,7 @@ package com.hanyanan.tools.schedule;
  * Created by hanyanan on 2014/7/29.
  * This class is a executor for request, it perform request and return the result.
  */
-public interface RequestExecutor<T, R extends Request<T>> {
+public interface RequestExecutor<T, R extends Request> {
 
     /**
      * Perform current request and return the result.It's a execution unit.

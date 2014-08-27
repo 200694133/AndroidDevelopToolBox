@@ -12,7 +12,7 @@ import java.io.UnsupportedEncodingException;
 /**
  * Created by hanyanan on 2014/7/30.
  */
-public class JsonObjectRequestExecutor implements RequestExecutor<JSONObject, NetworkRequest<JSONObject>> {
+public class JsonObjectRequestExecutor implements RequestExecutor<JSONObject, NetworkRequest> {
     /** Charset for request. */
     private static final String PROTOCOL_CHARSET = "utf-8";
 
@@ -23,7 +23,7 @@ public class JsonObjectRequestExecutor implements RequestExecutor<JSONObject, Ne
         mNetwork = network;
     }
     @Override
-    public Response<JSONObject> performRequest(NetworkRequest<JSONObject> request) throws XError {
+    public Response<JSONObject> performRequest(NetworkRequest request) throws XError {
         request.setBodyContentType(PROTOCOL_CONTENT_TYPE);
         request.setPramsEncoding(PROTOCOL_CHARSET);
         NetworkResponse res = mNetwork.performRequest(request);
