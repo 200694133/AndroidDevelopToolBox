@@ -38,10 +38,6 @@ public class HttpRequestParam implements RequestParam{
         int POST = 1;
         int PUT = 2;
         int DELETE = 3;
-        int HEAD = 4;
-        int OPTIONS = 5;
-        int TRACE = 6;
-        int PATCH = 7;
     }
     private int mConnectionTimeOut = DEFAULT_CONNECTION_TIMEOUT;
     private int mSocketTimeOut = DEFAULT_SOCKET_TIMEOUT;
@@ -61,8 +57,9 @@ public class HttpRequestParam implements RequestParam{
         return this;
     }
 
+
     public HttpRequestParam setInputStream(String name,InputStream inputStream){
-        mStreamWrapper = StreamWrapper.newInstance(inputStream,name,APPLICATION_OCTET_STREAM,true);
+//        mStreamWrapper = StreamWrapper.newInstance(inputStream,name,APPLICATION_OCTET_STREAM,true);
         return this;
     }
 
@@ -156,6 +153,7 @@ public class HttpRequestParam implements RequestParam{
         public final InputStream inputStream;
         public ContentRangeWrapper inputRangeWrapper;
         public final OutputStream outputStream;
+        public ContentRangeWrapper outputRangeWrapper;
         public final String name;
         public final String contentType;
         public final boolean autoClose;

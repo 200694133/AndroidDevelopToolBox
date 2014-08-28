@@ -52,8 +52,44 @@ public class HttpConnectionRequestExecutor implements RequestExecutor<byte[], Ne
         connection.setInstanceFollowRedirects(true);
     }
 
-    private static InputStream performGetRequest(HttpURLConnection connection, HttpRequestParam param) throws ProtocolException {
+    private static HttpInputWrapper performDownloadRequest(HttpURLConnection connection, HttpRequestParam param) throws ProtocolException {
+        parseHead(connection, param);
+        if(param.getMethod() == HttpRequestParam.Method.POST){
+            connection.setDoInput(true);
+        }
+        connection.setDoOutput(true);
 
+
+        return null;
+    }
+    private static void parseHead(HttpURLConnection connection, HttpRequestParam param) throws ProtocolException {
+        int method = param.getMethod();
+        switch (method){
+            case HttpRequestParam.Method.GET:
+                connection.setRequestMethod("GET");
+                break;
+            case HttpRequestParam.Method.POST:
+                connection.setRequestMethod("POST");
+                break;
+            case HttpRequestParam.Method.PUT:
+                connection.setRequestMethod("PUT");
+                break;
+            case HttpRequestParam.Method.DELETE:
+                connection.setRequestMethod("DELETE");
+                break;
+            default:
+                //TODO
+        }
+    }
+
+
+    private static class HttpInputWrapper{
+        public InputStream inputStream;
+        public HttpURLConnection httpURLConnection;
+        private HttpInputWrapper(InputStream inputStream, HttpURLConnection httpURLConnection){
+            this.inputStream = inputStream;
+            this.httpURLConnection = httpURLConnection;
+        }
     }
     private void init(){
 //        try {
