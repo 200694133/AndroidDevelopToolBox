@@ -6,6 +6,10 @@ import com.hanyanan.tools.schedule.XError;
 
 import org.apache.http.HttpConnection;
 
+import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.ProtocolException;
+
 /**
  * Created by Administrator on 2014/8/27.
  */
@@ -15,6 +19,42 @@ public class HttpConnectionRequestExecutor implements RequestExecutor<byte[], Ne
 
     }
 
+    private static void parseHttpRequestHeader(HttpURLConnection connection, HttpRequestParam param) throws ProtocolException {
+        if(null == connection || null==param) throw new NullPointerException("Input error.");
+        int method = param.getMethod();
+        connection.setUseCaches(param.useCache());
+        connection.setRequestProperty("Content-type", param.getContentType());
+
+        switch (method){
+            case HttpRequestParam.Method.GET:
+                connection.setDoInput(true);
+                break;
+            case HttpRequestParam.Method.POST:
+                connection.setRequestMethod("POST");
+                connection.setDoInput(true);
+                connection.setDoOutput(true);
+                break;
+            case HttpRequestParam.Method.PUT:
+
+                break;
+            default:
+                //TODO
+        }
+    }
+    private static void performGetRequest(HttpURLConnection connection, HttpRequestParam param) throws ProtocolException {
+        if(null == connection || null==param) throw new NullPointerException("Input error.");
+        connection.setUseCaches(param.useCache());
+        connection.setRequestMethod("GET");
+        connection.setDoInput(false);
+        connection.setDoOutput(true);
+        connection.setRequestProperty("Content-type", param.getContentType());
+        connection.setRequestProperty("Connection", "close");
+        connection.setInstanceFollowRedirects(true);
+    }
+
+    private static InputStream performGetRequest(HttpURLConnection connection, HttpRequestParam param) throws ProtocolException {
+
+    }
     private void init(){
 //        try {
 //            //Create connection

@@ -4,13 +4,18 @@ import com.hanyanan.tools.schedule.RequestParam;
 
 import java.io.File;
 import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Created by hanyanan on 2014/8/27.
  * Http request param. It support all type of http request, such as
  */
 public class HttpRequestParam implements RequestParam{
+    public final static String APPLICATION_DEFAULT="application/x-www-form-urlencoded";
     public final static String APPLICATION_OCTET_STREAM = "application/octet-stream";
     public final static String APPLICATION_JSON = "application/json";
     public static final String HEADER_CONTENT_TYPE = "Content-Type";
@@ -75,10 +80,22 @@ public class HttpRequestParam implements RequestParam{
         return "";
         //TODO
     }
-
-    private byte[] parseRequestHeader(){
-        //TODO
-        return null;
+    /**
+     * Converts <code>params</code> into an application/x-www-form-urlencoded encoded string.
+     */
+    private byte[] parseUrlRequestHeader(){
+        StringBuilder encodedParams = new StringBuilder();
+        try {
+            for (Map.Entry<String, String> entry : mUrlParams.entrySet()) {
+                encodedParams.append(URLEncoder.encode(entry.getKey(), "UTF-8"));
+                encodedParams.append('=');
+                encodedParams.append(URLEncoder.encode(entry.getValue(), "UTF-8"));
+                encodedParams.append('&');
+            }
+            return encodedParams.toString().getBytes("UTF-8");
+        } catch (UnsupportedEncodingException uee) {
+            throw new RuntimeException("Encoding not supported: " + "UTF-8", uee);
+        }
     }
 
     public HttpRequestParam setTransactionType(TransactionType type){
@@ -86,6 +103,13 @@ public class HttpRequestParam implements RequestParam{
         return this;
     }
 
+    public boolean useCache(){
+        return false;//TODO
+    }
+
+    public ProxyWrapper getProxy(){
+        return null;//TODO
+    }
 
     public String getUrl(){
         return mUrl;
@@ -95,6 +119,9 @@ public class HttpRequestParam implements RequestParam{
         return mMethod;
     }
 
+    public String getContentType(){
+        return APPLICATION_JSON;//TODO
+    }
     public int getSocketTimeOut(){
         return mSocketTimeOut;
     }
@@ -119,25 +146,47 @@ public class HttpRequestParam implements RequestParam{
             mSize = mLength = file.length();
         }
     }
+
+    public static class ContentRangeWrapper{
+        public long size;
+        public long offset;
+        public long length;
+    }
     public static class StreamWrapper {
         public final InputStream inputStream;
+        public ContentRangeWrapper inputRangeWrapper;
+        public final OutputStream outputStream;
         public final String name;
         public final String contentType;
         public final boolean autoClose;
 
-        public StreamWrapper(InputStream inputStream, String name, String contentType, boolean autoClose) {
+        public StreamWrapper(InputStream inputStream, OutputStream outputStream, String name, String contentType, boolean autoClose) {
             this.inputStream = inputStream;
+            this.outputStream = outputStream;
             this.name = name;
             this.contentType = contentType;
             this.autoClose = autoClose;
         }
 
-        static StreamWrapper newInstance(InputStream inputStream, String name, String contentType, boolean autoClose) {
+        static StreamWrapper newInstance(InputStream inputStream,OutputStream outputStream, String name, String contentType, boolean autoClose) {
             return new StreamWrapper(
                     inputStream,
+                    outputStream,
                     name,
                     contentType == null ? APPLICATION_OCTET_STREAM : contentType,
                     autoClose);
+        }
+    }
+    public static class ProxyWrapper{
+        public final String address;
+        public final String port;
+        public final String name;
+        public final String passwd;
+        public ProxyWrapper(String address, String port,String name,String passwd){
+            this.address = address;
+            this.port = port;
+            this.name = name;
+            this.passwd = passwd;
         }
     }
 }
