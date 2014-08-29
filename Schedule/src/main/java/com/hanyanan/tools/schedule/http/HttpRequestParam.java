@@ -144,6 +144,10 @@ public class HttpRequestParam implements RequestParam{
         }
     }
 
+    public ContentRangeWrapper getContentRangeWrapper(){
+
+        return null;
+    }
     public static class ContentRangeWrapper{
         public long size;
         public long offset;
