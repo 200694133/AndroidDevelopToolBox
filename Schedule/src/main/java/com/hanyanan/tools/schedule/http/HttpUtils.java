@@ -73,7 +73,7 @@ public class HttpUtils {
             } else {
                 throw new NoConnectionError(e);
             }
-            XLog.e("Unexpected response code %d for %s", statusCode, request.getUrl());
+            XLog.e("Unexpected response code %d for %s", statusCode, networkRequest.getHttpRequestParam().getUrl());
             if (responseContents != null) {
                 networkResponse = new NetworkResponse(statusCode, responseContents, responseHeaders, false);
                 if (statusCode == HttpStatus.SC_UNAUTHORIZED ||
