@@ -40,6 +40,7 @@ import java.util.Map;
 /**
  * An HttpStack that performs request over an {@link org.apache.http.client.HttpClient}.
  */
+@Deprecated
 public class HttpClientExecutor implements HttpExecutor {
     protected final HttpClient mClient;
 

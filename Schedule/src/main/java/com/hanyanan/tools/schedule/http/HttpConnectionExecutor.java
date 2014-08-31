@@ -40,6 +40,7 @@ import javax.net.ssl.SSLSocketFactory;
 /**
  * An {@link HttpExecutor} based on {@link java.net.HttpURLConnection}.
  */
+@Deprecated
 public class HttpConnectionExecutor implements HttpExecutor {
 
     private static final String HEADER_CONTENT_TYPE = "Content-Type";

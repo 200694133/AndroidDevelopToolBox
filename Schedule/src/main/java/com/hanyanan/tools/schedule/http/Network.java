@@ -20,6 +20,7 @@ import com.hanyanan.tools.schedule.XError;
 /**
  * An interface for performing requests.
  */
+@Deprecated
 public interface Network {
     /**
      * Performs the specified request.

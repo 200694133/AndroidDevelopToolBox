@@ -74,6 +74,9 @@ public class NetworkRequest<P extends RequestParam> extends Request{
         mMethod = method;
     }
 
+    public HttpRequestParam getHttpRequestParam(){
+        return null;//TODO
+    }
     /**
      * Return the method for this request.  Can be one of the values in {@link Method}.
      */

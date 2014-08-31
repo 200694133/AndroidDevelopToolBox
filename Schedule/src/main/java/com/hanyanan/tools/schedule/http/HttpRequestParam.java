@@ -8,7 +8,10 @@ import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+
+import javax.net.ssl.SSLSocketFactory;
 
 /**
  * Created by hanyanan on 2014/8/27.
@@ -57,12 +60,6 @@ public class HttpRequestParam implements RequestParam{
         return this;
     }
 
-
-    public HttpRequestParam setInputStream(String name,InputStream inputStream){
-//        mStreamWrapper = StreamWrapper.newInstance(inputStream,name,APPLICATION_OCTET_STREAM,true);
-        return this;
-    }
-
     public HttpRequestParam setUploadFile(File file){
         mFileWrapper = new FileWrapper(file, APPLICATION_OCTET_STREAM);
         return this;
@@ -76,6 +73,13 @@ public class HttpRequestParam implements RequestParam{
     public String parseUrlParam(){
         return "";
         //TODO
+    }
+
+    public SSLSocketFactory getSSLSocketFactory(){
+        return null;//TODO
+    }
+    public HashMap<String,String> getUrlPramsMaps(){
+        return mUrlParams;
     }
     /**
      * Converts <code>params</code> into an application/x-www-form-urlencoded encoded string.
@@ -147,6 +151,31 @@ public class HttpRequestParam implements RequestParam{
     public ContentRangeWrapper getContentRangeWrapper(){
 
         return null;
+    }
+
+    public List<UploadWrapper> getUploadWrappers(){
+        return null;
+    }
+
+    public HashMap<String,String> getHttpHeader(){
+        return null;
+    }
+    public boolean isDownloadMode(){
+        return true;
+    }
+    public static class UploadWrapper{
+        public final ContentRangeWrapper contentRangeWrapper;
+        public final InputStream inputStream;
+        public final String name;
+        public final String contentType;
+        public final boolean autoClose;
+        public UploadWrapper(InputStream inputStream,ContentRangeWrapper rangeWrapper,String name, String contentType,boolean autoClose){
+            this.contentRangeWrapper = rangeWrapper;
+            this.autoClose = autoClose;
+            this.contentType = contentType;
+            this.inputStream = inputStream;
+            this.name = name;
+        }
     }
     public static class ContentRangeWrapper{
         public long size;

@@ -35,6 +35,7 @@ import java.util.Map;
 /**
  * A network performing Volley requests over an {@link HttpExecutor}.
  */
+@Deprecated
 public class BasicNetwork implements Network {
     protected static final boolean DEBUG = true;//TODO
 

@@ -26,6 +26,7 @@ import java.util.Map;
 /**
  * An HTTP stack abstraction.
  */
+@Deprecated
 public interface HttpExecutor {
     /**
      * Performs an HTTP request with the given parameters.
