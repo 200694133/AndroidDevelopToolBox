@@ -175,6 +175,10 @@ public abstract class Request<P extends RequestParam> implements Comparable<Requ
         mRequestQueue.add(this);
     }
 
+    public final P getRequestParam(){
+        return mRequestParam;
+    }
+
     /**
      * Returns the sequence number of this request.
      */

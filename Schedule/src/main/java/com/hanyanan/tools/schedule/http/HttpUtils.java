@@ -80,7 +80,7 @@ public class HttpUtils {
         } catch (ConnectTimeoutException e) {
             throw new TimeoutError(e.toString());
         } catch (MalformedURLException e) {
-            throw new RuntimeException("Bad URL " + networkRequest.getHttpRequestParam().getUrl(), e);
+            throw new RuntimeException("Bad URL " + networkRequest.getRequestParam().getUrl(), e);
         } catch (IOException e) {
             int statusCode = 0;
             NetworkResponse networkResponse = null;
@@ -89,14 +89,14 @@ public class HttpUtils {
             } else {
                 throw new NoConnectionError(e);
             }
-            XLog.e("Unexpected response code %d for %s", statusCode, networkRequest.getHttpRequestParam().getUrl());
+            XLog.e("Unexpected response code %d for %s", statusCode, networkRequest.getRequestParam().getUrl());
             if (responseContents != null) {
                 networkResponse = new NetworkResponse(statusCode, responseContents, responseHeaders, false);
                 if (statusCode == HttpStatus.SC_UNAUTHORIZED ||
                         statusCode == HttpStatus.SC_FORBIDDEN) {
 //                        attemptRetryOnException("auth",
 //                                request, new AuthFailureError(networkResponse));
-                    throw new AuthFailureError("auth error " + networkRequest.getHttpRequestParam().getUrl());
+                    throw new AuthFailureError("auth error " + networkRequest.getRequestParam().getUrl());
                 } else {
                     // TODO: Only throw ServerError for 5xx status codes.
                     throw new ServerError(networkResponse);

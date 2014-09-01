@@ -22,7 +22,7 @@ public class JsonObjectRequestExecutor implements RequestExecutor<JSONObject, Ne
     }
     @Override
     public Response<JSONObject> performRequest(NetworkRequest request) throws XError {
-        HttpRequestParam param = request.getHttpRequestParam();
+        HttpRequestParam param = request.getRequestParam();
         param.setTransactionType(HttpRequestParam.TransactionType.JASON);
 
         try {

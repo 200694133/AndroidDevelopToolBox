@@ -38,9 +38,9 @@ public interface HttpExecutor {
      * @param additionalHeaders additional headers
      * @return the HTTP response
      */
-    public HttpResponse performRequest(NetworkRequest<?> request, Map<String, String> additionalHeaders)
+    public HttpResponse performRequest(NetworkRequest request, Map<String, String> additionalHeaders)
         throws IOException, AuthFailureError;
 
-    public InputStream performStreamRequest(NetworkRequest<?> request, Map<String, String> additionalHeaders)
+    public InputStream performStreamRequest(NetworkRequest request, Map<String, String> additionalHeaders)
             throws IOException, AuthFailureError;
 }

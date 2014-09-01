@@ -2,8 +2,10 @@ package com.hanyanan.tools.magicbox.view;
 
 import android.graphics.Bitmap;
 import com.hanyanan.tools.magicbox.MagicApplication;
+import com.hanyanan.tools.schedule.RequestQueue;
 import com.hanyanan.tools.schedule.Response;
 import com.hanyanan.tools.schedule.ResponseDelivery;
+import com.hanyanan.tools.schedule.http.HttpRequestParam;
 import com.hanyanan.tools.schedule.http.NetworkRequest;
 import com.hanyanan.tools.storage.disk.DiskStorage;
 
@@ -12,8 +14,8 @@ import java.util.HashMap;
 /**
  * Created by hanyanan on 2014/8/13.
  */
-class ImageRequest extends NetworkRequest<Bitmap> {
-    private static final BitmapExecutor sBitmapExecutor = new BitmapExecutor();
+class ImageRequest extends NetworkRequest {
+    private static final BitmapRequestExecutor S_BITMAP_REQUEST_EXECUTOR = new BitmapRequestExecutor();
     private int mMaxWidth, mMaxHeight;
 
     public void setMaxWidth(int width){
@@ -29,10 +31,6 @@ class ImageRequest extends NetworkRequest<Bitmap> {
         if(null == mApp) return null;
         return mApp.getFixSizeDiskStorage();
     }
-    public String getUrl(){
-        return mUrl;
-    }
-
     public int getMaxWidth(){
         return mMaxWidth;
     }
@@ -41,8 +39,16 @@ class ImageRequest extends NetworkRequest<Bitmap> {
         return mMaxHeight;
     }
 
-    public ImageRequest(String url,ResponseDelivery delivery, Response.Listener<Bitmap> listener, Response.ErrorListener listener1) {
-        super(url, new HashMap<String, String>(), sBitmapExecutor, delivery, listener1);
+    public ImageRequest(RequestQueue requestQueue,String url,ResponseDelivery delivery, Response.Listener<Bitmap> listener, Response.ErrorListener listener1) {
+        super(requestQueue, S_BITMAP_REQUEST_EXECUTOR,parseHttpRequestParam(url));
+        setErrorListener(listener1);
         setListener(listener);
+    }
+
+    private static HttpRequestParam parseHttpRequestParam(String url){
+        HttpRequestParam param = new HttpRequestParam(url);
+        param.setRequestMethod(HttpRequestParam.Method.GET);
+        param.setTransactionType(HttpRequestParam.TransactionType.STREAM);
+        return param;
     }
 }

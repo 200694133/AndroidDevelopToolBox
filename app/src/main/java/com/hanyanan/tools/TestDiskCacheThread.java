@@ -4,6 +4,8 @@ import android.content.Context;
 import android.os.Environment;
 import android.os.Looper;
 import android.util.Log;
+
+import com.hanyanan.tools.magicbox.MagicApplication;
 import com.hanyanan.tools.schedule.http.HttpConnectionExecutor;
 import com.hanyanan.tools.schedule.RequestExecutor;
 import com.hanyanan.tools.schedule.RequestQueue;
@@ -111,7 +113,7 @@ public class TestDiskCacheThread extends Thread{
 
         public DownloadRequest(String url,DiskStorage fixSizeDiskStorage,String key,
                                DownloadRequestExecutor requestExecutor, Response.ErrorListener listener) {
-            super(url, null, requestExecutor, null, listener);
+            super(MagicApplication.getInstance().getRequestQueue(),requestExecutor, null);
             mFixSizeDiskStorage = fixSizeDiskStorage;
             mKey = key;
         }

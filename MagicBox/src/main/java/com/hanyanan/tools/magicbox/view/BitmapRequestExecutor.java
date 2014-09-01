@@ -7,7 +7,9 @@ import com.hanyanan.tools.schedule.RequestExecutor;
 import com.hanyanan.tools.schedule.Response;
 import com.hanyanan.tools.schedule.XError;
 import com.hanyanan.tools.schedule.http.HttpConnectionExecutor;
+import com.hanyanan.tools.schedule.http.HttpConnectionImpl;
 import com.hanyanan.tools.schedule.http.HttpExecutor;
+import com.hanyanan.tools.schedule.http.HttpInterface;
 import com.hanyanan.tools.schedule.http.NetworkError;
 import com.hanyanan.tools.schedule.http.NetworkRequest;
 import com.hanyanan.tools.storage.disk.DiskStorage;
@@ -17,14 +19,15 @@ import java.io.InputStream;
 /**
  * Created by hanyanan on 2014/8/13.
  */
-public class BitmapExecutor implements RequestExecutor<Bitmap,ImageRequest> {
+public class BitmapRequestExecutor implements RequestExecutor<Bitmap,ImageRequest> {
     private static final String TAG = "BitmapExecutor";
-    private static Response downLoad(HttpExecutor httpExecutor,DiskStorage fixSizeDiskStorage,NetworkRequest request) throws NetworkError {
+    private static Response downLoad(HttpInterface httpExecutor,DiskStorage fixSizeDiskStorage,NetworkRequest request) throws NetworkError {
         try {
-            InputStream inputStream = httpExecutor.performStreamRequest(request, request.getParams());
-            Log.d(TAG, "performRequest InputStream " + inputStream);
-            fixSizeDiskStorage.save(request.getKey(),inputStream);
-            inputStream.close();
+            HttpInterface.HttpResponseWrapper httpResponseWrapper = httpExecutor.performDownLoadRequest(request);
+            if(null == httpResponseWrapper || httpResponseWrapper.inputStream == null) return Response.success(request.getKey());
+            Log.d(TAG, "performRequest InputStream " + httpResponseWrapper.inputStream);
+            fixSizeDiskStorage.save(request.getKey(), httpResponseWrapper.inputStream);
+            httpResponseWrapper.inputStream.close();
             Log.d(TAG, "download "+request.getKey()+"    "+request.getUrl()+"  success");
             return Response.success(request.getKey());
         } catch (IOException e) {
@@ -33,6 +36,7 @@ public class BitmapExecutor implements RequestExecutor<Bitmap,ImageRequest> {
             throw new NetworkError(e);
         }
     }
+
     private static final class Size{
         int mWidth, mHeight;
         public Size(int w,int h){
@@ -103,7 +107,7 @@ public class BitmapExecutor implements RequestExecutor<Bitmap,ImageRequest> {
     public Response<Bitmap> performRequest(ImageRequest request) throws XError {
         DiskStorage cache = request.getFixSizeDiskStorage();
 
-        downLoad(new HttpConnectionExecutor(), request.getFixSizeDiskStorage(), request);
+        downLoad(new HttpConnectionImpl(), request.getFixSizeDiskStorage(), request);
 
         Bitmap bitmap = null;
         try {

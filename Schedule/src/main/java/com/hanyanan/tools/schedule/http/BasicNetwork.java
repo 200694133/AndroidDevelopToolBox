@@ -53,7 +53,7 @@ public class BasicNetwork implements Network {
     }
 
     @Override
-    public NetworkResponse performRequest(NetworkRequest<?> request) throws XError {
+    public NetworkResponse performRequest(NetworkRequest request) throws XError {
         long requestStart = SystemClock.elapsedRealtime();
         while (true) {
             HttpResponse httpResponse = null;

@@ -139,6 +139,11 @@ public class HttpRequestParam implements RequestParam{
         mDownLoadRange = new ContentRangeWrapper(offset,length);
         return this;
     }
+    private boolean isDownLoadMode = true;
+    public HttpRequestParam setDownLoadMode(boolean isDownLoadMode){
+        this.isDownLoadMode = isDownLoadMode;
+        return this;
+    }
     /**
      * DownLoad range of content
      * @return content range
@@ -160,7 +165,7 @@ public class HttpRequestParam implements RequestParam{
         return mHeaderMaps;
     }
     public boolean isDownloadMode(){
-        return true;
+        return isDownLoadMode;
     }
     public static class UploadWrapper{
         public final ContentRangeWrapper contentRangeWrapper;
@@ -188,24 +193,20 @@ public class HttpRequestParam implements RequestParam{
     public static class StreamWrapper {
         public final InputStream inputStream;
         public ContentRangeWrapper inputRangeWrapper;
-        public final OutputStream outputStream;
-        public ContentRangeWrapper outputRangeWrapper;
         public final String name;
         public final String contentType;
         public final boolean autoClose;
 
-        public StreamWrapper(InputStream inputStream, OutputStream outputStream, String name, String contentType, boolean autoClose) {
+        public StreamWrapper(InputStream inputStream,String name, String contentType, boolean autoClose) {
             this.inputStream = inputStream;
-            this.outputStream = outputStream;
             this.name = name;
             this.contentType = contentType;
             this.autoClose = autoClose;
         }
 
-        static StreamWrapper newInstance(InputStream inputStream,OutputStream outputStream, String name, String contentType, boolean autoClose) {
+        public static StreamWrapper newInstance(InputStream inputStream,OutputStream outputStream, String name, String contentType, boolean autoClose) {
             return new StreamWrapper(
                     inputStream,
-                    outputStream,
                     name,
                     contentType == null ? APPLICATION_OCTET_STREAM : contentType,
                     autoClose);

@@ -23,7 +23,7 @@ public class JsonArrayRequestExecutor implements RequestExecutor<JSONArray, Netw
     }
     @Override
     public Response<JSONArray> performRequest(NetworkRequest request) throws XError {
-        HttpRequestParam param = request.getHttpRequestParam();
+        HttpRequestParam param = request.getRequestParam();
         param.setTransactionType(HttpRequestParam.TransactionType.JASON);
 
         try {

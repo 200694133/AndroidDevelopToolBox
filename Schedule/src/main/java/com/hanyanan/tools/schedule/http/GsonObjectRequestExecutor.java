@@ -25,7 +25,7 @@ public class GsonObjectRequestExecutor<T> implements RequestExecutor<T, NetworkR
     }
     @Override
     public Response<T> performRequest(NetworkRequest request) throws XError {
-        HttpRequestParam param = request.getHttpRequestParam();
+        HttpRequestParam param = request.getRequestParam();
         param.setTransactionType(HttpRequestParam.TransactionType.JASON);
 
         try {

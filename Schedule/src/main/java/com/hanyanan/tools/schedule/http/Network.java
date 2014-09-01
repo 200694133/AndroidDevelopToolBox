@@ -28,5 +28,5 @@ public interface Network {
      * @return A {@link NetworkResponse} with data and caching metadata; will never be null
      * @throws XError on errors
      */
-    public NetworkResponse performRequest(NetworkRequest<?> request) throws XError;
+    public NetworkResponse performRequest(NetworkRequest request) throws XError;
 }

@@ -141,9 +141,9 @@ public class HttpConnectionImpl implements HttpInterface{
     public static HttpResponseWrapper performDownloadRequest(HttpURLConnection connection, HttpRequestParam param) throws IOException {
         parseHead(connection, param);
         if(param.getMethod() == HttpRequestParam.Method.POST){
-            connection.setDoInput(true);
+            connection.setDoOutput(true);
         }
-        connection.setDoOutput(true);
+        connection.setDoInput(true);
         packageHttpHeader(connection,param.getHttpHeader());
         connection.setRequestProperty("Content-type", param.getContentType());
         connection.setRequestProperty("Connection", "close");
@@ -208,7 +208,7 @@ public class HttpConnectionImpl implements HttpInterface{
 
     @Override
     public boolean performUpLoadRequest(NetworkRequest httpRequest) throws IOException {
-        HttpRequestParam httpRequestParam = httpRequest.getHttpRequestParam();
+        HttpRequestParam httpRequestParam = httpRequest.getRequestParam();
         URL url = null;
         if(httpRequestParam.getMethod() == HttpRequestParam.Method.GET){
             url = new URL(httpRequestParam.getUrl()+"?"+HttpUtils.encodeParam(httpRequestParam.getUrlPramsMaps()));
@@ -235,7 +235,7 @@ public class HttpConnectionImpl implements HttpInterface{
 
     @Override
     public HttpResponseWrapper performDownLoadRequest(NetworkRequest httpRequest) throws IOException {
-        HttpRequestParam httpRequestParam = httpRequest.getHttpRequestParam();
+        HttpRequestParam httpRequestParam = httpRequest.getRequestParam();
         URL url = null;
         if(httpRequestParam.getMethod() == HttpRequestParam.Method.GET){
             url = new URL(httpRequestParam.getUrl()+"?"+HttpUtils.encodeParam(httpRequestParam.getUrlPramsMaps()));

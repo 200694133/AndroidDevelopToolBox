@@ -73,7 +73,8 @@ public class NetworkImageView extends ImageView implements Response.ErrorListene
         if(null != bitmap) {
             this.setImageBitmap(bitmap);
         }
-        mImageRequest = new ImageRequest(mUrl,new DefaultResponseDelivery(new Handler(Looper.getMainLooper())),this,this );
+        mImageRequest = new ImageRequest(MagicApplication.getInstance().getRequestQueue(),
+                mUrl,new DefaultResponseDelivery(new Handler(Looper.getMainLooper())),this,this );
         mImageRequest.setMaxWidth(getMaxWidth());
         mImageRequest.setMaxHeight(getMaxHeight());
         mApp.getRequestQueue().add(mImageRequest);
