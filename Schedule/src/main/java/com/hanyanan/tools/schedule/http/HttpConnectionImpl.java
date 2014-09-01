@@ -211,7 +211,7 @@ public class HttpConnectionImpl implements HttpInterface{
         HttpRequestParam httpRequestParam = httpRequest.getHttpRequestParam();
         URL url = null;
         if(httpRequestParam.getMethod() == HttpRequestParam.Method.GET){
-            url = new URL(httpRequestParam.getUrl()+"?"+encodeParam(httpRequestParam.getUrlPramsMaps()));
+            url = new URL(httpRequestParam.getUrl()+"?"+HttpUtils.encodeParam(httpRequestParam.getUrlPramsMaps()));
         }else{
             url = new URL(httpRequestParam.getUrl());
         }
@@ -238,7 +238,7 @@ public class HttpConnectionImpl implements HttpInterface{
         HttpRequestParam httpRequestParam = httpRequest.getHttpRequestParam();
         URL url = null;
         if(httpRequestParam.getMethod() == HttpRequestParam.Method.GET){
-            url = new URL(httpRequestParam.getUrl()+"?"+encodeParam(httpRequestParam.getUrlPramsMaps()));
+            url = new URL(httpRequestParam.getUrl()+"?"+HttpUtils.encodeParam(httpRequestParam.getUrlPramsMaps()));
         }else{
             url = new URL(httpRequestParam.getUrl());
         }
@@ -257,21 +257,7 @@ public class HttpConnectionImpl implements HttpInterface{
         }
     }
 
-    private static String encodeParam(Map<String, String> params){
-        String encodeing  = "UTF-8";
-        StringBuilder encodedParams = new StringBuilder();
-        try {
-            for (Map.Entry<String, String> entry : params.entrySet()) {
-                encodedParams.append(URLEncoder.encode(entry.getKey(), encodeing));
-                encodedParams.append('=');
-                encodedParams.append(URLEncoder.encode(entry.getValue(), encodeing));
-                encodedParams.append('&');
-            }
-            return encodedParams.toString();
-        } catch (UnsupportedEncodingException uee) {
-            throw new RuntimeException("Encoding not supported: " + encodeing, uee);
-        }
-    }
+
 
 
 }

@@ -22,20 +22,12 @@ public class StringRequestExecutor implements RequestExecutor<String, NetworkReq
     @Override
     public Response<String> performRequest(NetworkRequest request) throws XError {
         try {
-            BasicHttpResponse res = mHttpInterface.performSimpleRequest(request);
-            if(null == res) return Response.success("");
-            byte[] data = HttpUtils.entityToBytes(res.getEntity());
-
+            return Response.success(HttpUtils.doStringRequest(mHttpInterface,request));
         } catch (IOException e) {
-            e.printStackTrace();
+           throw new XError(e);
+        }catch (Exception e){
+            throw new XError(e);
         }
-        String parsed;
-        try {
-            parsed = new String(res.data, parseCharset(res.headers));
-        } catch (UnsupportedEncodingException e) {
-            parsed = new String(res.data);
-        }
-        return Response.success(parsed);
     }
 
     /**

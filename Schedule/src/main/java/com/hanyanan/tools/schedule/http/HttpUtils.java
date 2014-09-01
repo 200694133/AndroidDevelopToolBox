@@ -11,12 +11,15 @@ import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
 import org.apache.http.StatusLine;
 import org.apache.http.conn.ConnectTimeoutException;
+import org.apache.http.protocol.HTTP;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.SocketTimeoutException;
+import java.net.URLEncoder;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -24,7 +27,20 @@ import java.util.Map;
  * Created by Administrator on 2014/8/31.
  */
 public class HttpUtils {
-    public static NetworkResponse doRequest(HttpInterface httpInterface, NetworkRequest networkRequest) throws XError,IOException,NoConnectionError {
+    public static String doStringRequest(HttpInterface httpInterface, NetworkRequest networkRequest)throws XError,IOException{
+        NetworkResponse networkResponse = doRequest(httpInterface,networkRequest);
+        if(null == networkResponse) return null;
+        byte[] data = networkResponse.data;
+        if(null == data || data.length <=0) return null;
+        String parsed = null;
+        try {
+            parsed = new String(data, parseCharset(networkResponse.headers));
+        } catch (UnsupportedEncodingException e) {
+            parsed = new String(data);
+        }
+        return parsed;
+    }
+    public static NetworkResponse doRequest(HttpInterface httpInterface, NetworkRequest networkRequest) throws XError,IOException {
         long requestStart = SystemClock.elapsedRealtime();
         HttpResponse httpResponse = null;
         byte[] responseContents = null;
@@ -129,5 +145,42 @@ public class HttpUtils {
             result.put(headers[i].getName(), headers[i].getValue());
         }
         return result;
+    }
+
+    /**
+     * Returns the charset specified in the Content-Type of this header,
+     * or the HTTP default (ISO-8859-1) if none can be found.
+     */
+    public static String parseCharset(Map<String, String> headers) {
+        String contentType = headers.get(HTTP.CONTENT_TYPE);
+        if (contentType != null) {
+            String[] params = contentType.split(";");
+            for (int i = 1; i < params.length; i++) {
+                String[] pair = params[i].trim().split("=");
+                if (pair.length == 2) {
+                    if (pair[0].equals("charset")) {
+                        return pair[1];
+                    }
+                }
+            }
+        }
+
+        return HTTP.DEFAULT_CONTENT_CHARSET;
+    }
+
+    public static String encodeParam(Map<String, String> params){
+        String encodeing  = "UTF-8";
+        StringBuilder encodedParams = new StringBuilder();
+        try {
+            for (Map.Entry<String, String> entry : params.entrySet()) {
+                encodedParams.append(URLEncoder.encode(entry.getKey(), encodeing));
+                encodedParams.append('=');
+                encodedParams.append(URLEncoder.encode(entry.getValue(), encodeing));
+                encodedParams.append('&');
+            }
+            return encodedParams.toString();
+        } catch (UnsupportedEncodingException uee) {
+            throw new RuntimeException("Encoding not supported: " + encodeing, uee);
+        }
     }
 }

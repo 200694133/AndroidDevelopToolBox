@@ -31,7 +31,7 @@ public class HttpRequestParam implements RequestParam{
     public static final int DEFAULT_SOCKET_TIMEOUT = 5000;
     public static final int DEFAULT_SOCKET_BUFFER_SIZE = 8192;
     public static enum TransactionType {
-        JASON, CHAR,STREAM,BINARY
+        DEFAULT,JASON, CHAR,STREAM,BINARY
     }
     /**
      * Supported request methods.
@@ -46,10 +46,10 @@ public class HttpRequestParam implements RequestParam{
     private int mSocketTimeOut = DEFAULT_SOCKET_TIMEOUT;
     private int mMethod = Method.GET;
     private final String mUrl;
-    private TransactionType mTransactionType = TransactionType.CHAR;
+    private TransactionType mTransactionType = TransactionType.DEFAULT;
     private final HashMap<String,String> mUrlParams = new HashMap<String, String>();
-
-    private FileWrapper mFileWrapper;
+    private final HashMap<String,String> mHeaderMaps = new HashMap<String, String>();
+    private ContentRangeWrapper mDownLoadRange = null;
     private StreamWrapper mStreamWrapper;
     public HttpRequestParam(String url){
         mUrl = url;
@@ -60,19 +60,13 @@ public class HttpRequestParam implements RequestParam{
         return this;
     }
 
-    public HttpRequestParam setUploadFile(File file){
-        mFileWrapper = new FileWrapper(file, APPLICATION_OCTET_STREAM);
-        return this;
-    }
-
     public HttpRequestParam putUrlParam(String key, String value){
         mUrlParams.put(key, value);
         return this;
     }
 
     public String parseUrlParam(){
-        return "";
-        //TODO
+        return HttpUtils.encodeParam(mUrlParams);
     }
 
     public SSLSocketFactory getSSLSocketFactory(){
@@ -81,24 +75,6 @@ public class HttpRequestParam implements RequestParam{
     public HashMap<String,String> getUrlPramsMaps(){
         return mUrlParams;
     }
-    /**
-     * Converts <code>params</code> into an application/x-www-form-urlencoded encoded string.
-     */
-    private byte[] parseUrlRequestHeader(){
-        StringBuilder encodedParams = new StringBuilder();
-        try {
-            for (Map.Entry<String, String> entry : mUrlParams.entrySet()) {
-                encodedParams.append(URLEncoder.encode(entry.getKey(), "UTF-8"));
-                encodedParams.append('=');
-                encodedParams.append(URLEncoder.encode(entry.getValue(), "UTF-8"));
-                encodedParams.append('&');
-            }
-            return encodedParams.toString().getBytes("UTF-8");
-        } catch (UnsupportedEncodingException uee) {
-            throw new RuntimeException("Encoding not supported: " + "UTF-8", uee);
-        }
-    }
-
     public HttpRequestParam setTransactionType(TransactionType type){
         mTransactionType = type;
         return this;
@@ -121,7 +97,18 @@ public class HttpRequestParam implements RequestParam{
     }
 
     public String getContentType(){
-        return APPLICATION_JSON;//TODO
+        switch (mTransactionType){
+            case DEFAULT:
+                return APPLICATION_DEFAULT;
+            case JASON:
+                return APPLICATION_JSON;
+            case STREAM:
+            case BINARY:
+                return APPLICATION_OCTET_STREAM;
+            case CHAR:
+                return APPLICATION_JSON;
+        }
+        return APPLICATION_DEFAULT;
     }
     public int getSocketTimeOut(){
         return mSocketTimeOut;
@@ -129,36 +116,48 @@ public class HttpRequestParam implements RequestParam{
     public int getConnectTimeOut(){
         return mConnectionTimeOut;
     }
-    public static class FileWrapper {
-        public final File file;
-        public final String contentType;
-        private long mOffset, mLength, mSize;
-        public FileWrapper(File file, String contentType, long offset, long length) {
-            mOffset = offset;
-            mLength = length;
-            mSize = file.length();
-            this.file = file;
-            this.contentType = contentType;
-        }
-        public FileWrapper(File file, String contentType) {
-            this.file = file;
-            this.contentType = contentType;
-            mOffset = 0;
-            mSize = mLength = file.length();
-        }
+//    public static class FileWrapper {
+//        public final File file;
+//        public final String contentType;
+//        private long mOffset, mLength, mSize;
+//        public FileWrapper(File file, String contentType, long offset, long length) {
+//            mOffset = offset;
+//            mLength = length;
+//            mSize = file.length();
+//            this.file = file;
+//            this.contentType = contentType;
+//        }
+//        public FileWrapper(File file, String contentType) {
+//            this.file = file;
+//            this.contentType = contentType;
+//            mOffset = 0;
+//            mSize = mLength = file.length();
+//        }
+//    }
+
+    public HttpRequestParam setDownLoadRange(int offset, int length){
+        mDownLoadRange = new ContentRangeWrapper(offset,length);
+        return this;
     }
-
+    /**
+     * DownLoad range of content
+     * @return content range
+     */
     public ContentRangeWrapper getContentRangeWrapper(){
-
-        return null;
+        return mDownLoadRange;
     }
 
     public List<UploadWrapper> getUploadWrappers(){
         return null;
     }
 
+    public HttpRequestParam setHeaderProperty(String key, String value){
+        mHeaderMaps.put(key, value);
+        return this;
+    }
+
     public HashMap<String,String> getHttpHeader(){
-        return null;
+        return mHeaderMaps;
     }
     public boolean isDownloadMode(){
         return true;
@@ -181,6 +180,10 @@ public class HttpRequestParam implements RequestParam{
         public long size;
         public long offset;
         public long length;
+        public ContentRangeWrapper(int offset, int length){
+            this.offset = offset;
+            this.length = length;
+        }
     }
     public static class StreamWrapper {
         public final InputStream inputStream;
