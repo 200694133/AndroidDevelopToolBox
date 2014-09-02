@@ -106,8 +106,10 @@ public class BitmapRequestExecutor implements RequestExecutor<Bitmap,ImageReques
     @Override
     public Response<Bitmap> performRequest(ImageRequest request) throws XError {
         DiskStorage cache = request.getFixSizeDiskStorage();
-
-        downLoad(new HttpConnectionImpl(), request.getFixSizeDiskStorage(), request);
+        String key = request.getKey();
+        if(!cache.contains(key)){
+            downLoad(new HttpConnectionImpl(), request.getFixSizeDiskStorage(), request);
+        }
 
         Bitmap bitmap = null;
         try {

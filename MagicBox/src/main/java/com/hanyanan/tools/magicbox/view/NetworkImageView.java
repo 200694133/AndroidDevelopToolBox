@@ -10,6 +10,7 @@ import android.util.LruCache;
 import android.widget.ImageView;
 
 import com.hanyanan.tools.magicbox.MagicApplication;
+import com.hanyanan.tools.magicbox.MagicUtils;
 import com.hanyanan.tools.magicbox.R;
 import com.hanyanan.tools.schedule.DefaultResponseDelivery;
 import com.hanyanan.tools.schedule.RequestQueue;
@@ -29,6 +30,7 @@ public class NetworkImageView extends ImageView implements Response.ErrorListene
     private int mDefaultFaultId = sDefaultFaultId;
     private String mUrl;
     private ImageRequest mImageRequest = null;
+    private boolean attach = false;
     public NetworkImageView(Context context) {
         super(context);
     }
@@ -44,6 +46,7 @@ public class NetworkImageView extends ImageView implements Response.ErrorListene
      * completes.
      */
     public void setDefaultImageId(int id){
+        MagicUtils.checkThreadState();
         mDefaultImageId = id;
     }
     /**
@@ -51,9 +54,11 @@ public class NetworkImageView extends ImageView implements Response.ErrorListene
      * requested fails to load.
      */
     public void setDefaultFaultId(int id){
+        MagicUtils.checkThreadState();
         mDefaultFaultId = id;
     }
     public void setUrl(String url){
+        MagicUtils.checkThreadState();
         if(mUrl == url) return ;
         if(!TextUtils.isEmpty(mUrl) && mUrl.equals(url)) return ;
 
@@ -66,6 +71,7 @@ public class NetworkImageView extends ImageView implements Response.ErrorListene
         loadImageIfNecessary();
     }
     void loadImageIfNecessary(){
+        if(!attach || null==mUrl) return ;
         MagicApplication mApp = MagicApplication.getInstance();
         if(null == mApp) return ;
         LruCache<String, Bitmap> cache = mApp.getBitmapLruCache();
@@ -84,8 +90,14 @@ public class NetworkImageView extends ImageView implements Response.ErrorListene
     protected void onLayout(boolean changed, int left, int top, int right, int bottom) {
         super.onLayout(changed, left, top, right, bottom);
     }
+    public void onAttachedToWindow(){
+        super.onAttachedToWindow();
+        attach  = true;
+        loadImageIfNecessary();
+    }
     @Override
     protected void onDetachedFromWindow() {
+        attach  = false;
         if (mImageRequest != null) {
             mImageRequest.cancel();
             setImageBitmap(null);

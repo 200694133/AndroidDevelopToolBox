@@ -39,7 +39,8 @@ class ImageRequest extends NetworkRequest {
         return mMaxHeight;
     }
 
-    public ImageRequest(RequestQueue requestQueue,String url,ResponseDelivery delivery, Response.Listener<Bitmap> listener, Response.ErrorListener listener1) {
+    public ImageRequest(RequestQueue requestQueue,String url,ResponseDelivery delivery,
+                        Response.Listener<Bitmap> listener, Response.ErrorListener listener1) {
         super(requestQueue, S_BITMAP_REQUEST_EXECUTOR,parseHttpRequestParam(url));
         setErrorListener(listener1);
         setListener(listener);

@@ -31,7 +31,7 @@ public class MagicApplication extends Application {
         mRequestQueue = new RequestQueue(Runtime.getRuntime().availableProcessors());
         long max = Runtime.getRuntime().maxMemory();
         int cacheSize = (int)max/8;
-        cacheSize = cacheSize<4*M?4*M:cacheSize;
+        cacheSize = cacheSize<40*M?40*M:cacheSize;
         mBitmapLruCache = new LruCache<String, Bitmap>(cacheSize){
             protected int sizeOf(String key, Bitmap value){
                 if(null == value) return 0;
