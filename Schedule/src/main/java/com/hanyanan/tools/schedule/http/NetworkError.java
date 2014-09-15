@@ -5,7 +5,7 @@ import com.hanyanan.tools.schedule.XError;
 /**
  * Created by hanyanan on 2014/7/30.
  */
-public class NetworkError extends XError{
+public class NetworkError extends Exception{
     public final NetworkResponse networkResponse;
 
     public NetworkError() {

@@ -76,9 +76,9 @@ public class HttpUtils {
             }
             return new NetworkResponse(statusCode, responseContents, responseHeaders, false);
         } catch (SocketTimeoutException e) {
-            throw new NetworkError(e);
+            throw new XError(e);
         } catch (ConnectTimeoutException e) {
-            throw new TimeoutError(e.toString());
+            throw new XError(e);
         } catch (MalformedURLException e) {
             throw new RuntimeException("Bad URL " + networkRequest.getRequestParam().getUrl(), e);
         } catch (IOException e) {
@@ -87,7 +87,7 @@ public class HttpUtils {
             if (httpResponse != null) {
                 statusCode = httpResponse.getStatusLine().getStatusCode();
             } else {
-                throw new NoConnectionError(e);
+                throw new XError(new NoConnectionError(e));
             }
             XLog.e("Unexpected response code %d for %s", statusCode, networkRequest.getRequestParam().getUrl());
             if (responseContents != null) {
@@ -96,16 +96,19 @@ public class HttpUtils {
                         statusCode == HttpStatus.SC_FORBIDDEN) {
 //                        attemptRetryOnException("auth",
 //                                request, new AuthFailureError(networkResponse));
-                    throw new AuthFailureError("auth error " + networkRequest.getRequestParam().getUrl());
+                    throw new XError(new AuthFailureError("auth error " + networkRequest.getRequestParam().getUrl()));
                 } else {
                     // TODO: Only throw ServerError for 5xx status codes.
-                    throw new ServerError(networkResponse);
+                    throw new XError(new ServerError(networkResponse));
                 }
             } else {
-                throw new NetworkError(networkResponse);
+                throw new XError(new NetworkError(networkResponse));
             }
+        } catch (ServerError serverError) {
+            throw new XError(serverError);
         }
     }
+
 
     /** Reads the contents of HttpEntity into a byte[]. */
     public static byte[] entityToBytes(HttpEntity entity) throws IOException, ServerError {

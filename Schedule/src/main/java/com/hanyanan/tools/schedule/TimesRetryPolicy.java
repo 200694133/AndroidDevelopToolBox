@@ -23,7 +23,7 @@ public class TimesRetryPolicy implements RetryPolicy {
     public void retry(XError error) throws XError {
         mCurrentTimes++;
         if(mCurrentTimes > mMaxTimes){
-            throw new XError("It's more than max retry count.");
+            throw new XError(new FaultError("It's more than max retry count."));
         }
     }
 }

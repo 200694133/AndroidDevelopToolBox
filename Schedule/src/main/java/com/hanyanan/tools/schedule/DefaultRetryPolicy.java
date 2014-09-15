@@ -20,7 +20,7 @@ public class DefaultRetryPolicy implements RetryPolicy{
     public void retry(XError error) throws XError {
         ++mCount;
         if(DEFAULT_RETRY_TIME < mCount){
-            throw new XError("Retry times over "+mCount);
+            throw new XError(new FaultError());
         }
     }
 }

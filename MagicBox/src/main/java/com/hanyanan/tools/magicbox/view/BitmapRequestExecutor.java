@@ -3,6 +3,8 @@ package com.hanyanan.tools.magicbox.view;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.util.Log;
+
+import com.hanyanan.tools.schedule.FaultError;
 import com.hanyanan.tools.schedule.RequestExecutor;
 import com.hanyanan.tools.schedule.Response;
 import com.hanyanan.tools.schedule.XError;
@@ -107,20 +109,24 @@ public class BitmapRequestExecutor implements RequestExecutor<Bitmap,ImageReques
     public Response<Bitmap> performRequest(ImageRequest request) throws XError {
         DiskStorage cache = request.getFixSizeDiskStorage();
         String key = request.getKey();
-        if(!cache.contains(key)){
-            downLoad(new HttpConnectionImpl(), request.getFixSizeDiskStorage(), request);
-        }
-
         Bitmap bitmap = null;
         try {
+            if(!cache.contains(key)){
+                downLoad(new HttpConnectionImpl(), request.getFixSizeDiskStorage(), request);
+            }
+
+
             bitmap = parseBitmap(cache, request.getKey(),request.getMaxWidth(),request.getMaxHeight());
         } catch (IOException e) {
             e.printStackTrace();
             return null;
+        } catch (NetworkError networkError) {
+            networkError.printStackTrace();
+            throw new XError(networkError);
         }
 
         if(null != bitmap) return Response.success(bitmap);
-        return Response.error(new XError("Decode failed"));
+        return Response.error(new XError(new FaultError("Decode failed")));
     }
     /**
      * Returns the largest power-of-two divisor for use in downscaling a bitmap

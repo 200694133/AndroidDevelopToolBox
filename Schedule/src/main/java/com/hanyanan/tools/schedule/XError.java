@@ -4,11 +4,18 @@ package com.hanyanan.tools.schedule;
  * Created by hanyanan on 2014/7/29.
  */
 public class XError extends Exception{
-    public XError() {super();}
+    private final Throwable mThrowable;
+    public XError() {
+        super();
+        mThrowable = null;
+    }
 
-    public XError(java.lang.String detailMessage) { super(detailMessage); }
+    public Throwable getThrowable(){
+        return mThrowable;
+    }
 
-    public XError(java.lang.String detailMessage, java.lang.Throwable throwable) { super(detailMessage,throwable); }
-
-    public XError(java.lang.Throwable throwable) {  super(throwable);  }
+    public XError(java.lang.Throwable throwable) {
+        super(throwable);
+        mThrowable = throwable;
+    }
 }

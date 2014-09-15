@@ -35,6 +35,13 @@ public class Response<T> {
         return new Response<T>(error);
     }
 
+    /**
+     * Returns a failed response containing the given error code and an optional
+     * localized message displayed to the user.
+     */
+    public static <T> Response<T> error(Throwable error) {
+        return new Response<T>(new XError(error));
+    }
     /** Parsed response, or null in the case of error. */
     public final T result;
 

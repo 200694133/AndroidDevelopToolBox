@@ -1,5 +1,6 @@
 package com.hanyanan.tools.schedule.http;
 
+import com.hanyanan.tools.schedule.FaultError;
 import com.hanyanan.tools.schedule.RetryPolicy;
 import com.hanyanan.tools.schedule.XError;
 
@@ -23,7 +24,7 @@ public class NetworkRetryPolicy implements RetryPolicy{
     public void retry(XError error) throws XError {
         ++mCount;
         if(DEFAULT_RETRY_TIME < mCount){
-            throw new XError("Retry times over "+mCount);
+            throw new XError(new FaultError("Retry times over "+mCount));
         }
     }
 }
