@@ -13,6 +13,7 @@ import com.hanyanan.tools.magicbox.MagicApplication;
 import com.hanyanan.tools.magicbox.MagicUtils;
 import com.hanyanan.tools.magicbox.R;
 import com.hanyanan.tools.schedule.DefaultResponseDelivery;
+import com.hanyanan.tools.schedule.Request;
 import com.hanyanan.tools.schedule.RequestQueue;
 import com.hanyanan.tools.schedule.Response;
 import com.hanyanan.tools.schedule.XError;
@@ -23,7 +24,7 @@ import java.lang.ref.WeakReference;
 /**
  * Created by hanyanan on 2014/8/12.
  */
-public class NetworkImageView extends ImageView implements Response.ErrorListener,Response.Listener<Bitmap>{
+public class NetworkImageView extends ImageView implements Response.Listener<Bitmap>{
     public static int sDefaultImageId = R.drawable.ic_launcher;
     public static int sDefaultFaultId = R.drawable.ic_launcher;
     private int mDefaultImageId = sDefaultImageId;
@@ -80,7 +81,7 @@ public class NetworkImageView extends ImageView implements Response.ErrorListene
             this.setImageBitmap(bitmap);
         }
         mImageRequest = new ImageRequest(MagicApplication.getInstance().getRequestQueue(),
-                mUrl,new DefaultResponseDelivery(new Handler(Looper.getMainLooper())),this,this );
+                mUrl,new DefaultResponseDelivery(new Handler(Looper.getMainLooper())),this );
         mImageRequest.setMaxWidth(getMaxWidth());
         mImageRequest.setMaxHeight(getMaxHeight());
         mApp.getRequestQueue().add(mImageRequest);
@@ -112,12 +113,12 @@ public class NetworkImageView extends ImageView implements Response.ErrorListene
     }
 
     @Override
-    public void onErrorResponse(XError error) {
+    public void onErrorResponse(Request request, XError error) {
         this.setImageResource(mDefaultFaultId);
     }
 
     @Override
-    public void onResponse(Bitmap response) {
+    public void onResponse(Request request, Bitmap response) {
         if(null == mImageRequest) return ;
         MagicApplication mApp = MagicApplication.getInstance();
         if(null == mApp) return ;
@@ -126,5 +127,10 @@ public class NetworkImageView extends ImageView implements Response.ErrorListene
             cache.put(mUrl, response);
         }
         this.setImageBitmap(response);
+    }
+
+    @Override
+    public void onCanceledResponse(Request request) {
+        //TODO
     }
 }

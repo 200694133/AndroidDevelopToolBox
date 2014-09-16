@@ -40,7 +40,7 @@ public class RequestQueue {
     private final RetryPolicy mDefaultRetryPolicy;
 
     /** default global error listener. */
-    private Response.ErrorListener mDefaultErrorListener;
+    private Response.Listener mDefaultResponseListener;
     /**
      * Creates the worker pool. Processing will not begin until {@link #start()} is called.
      *
@@ -112,8 +112,8 @@ public class RequestQueue {
      * Get default error listener.
      * @return default error listener
      */
-    public Response.ErrorListener getDefaultErrorListener(){
-        return mDefaultErrorListener;
+    public Response.Listener getDefaultResponseListener(){
+        return mDefaultResponseListener;
     }
     /**
      * Gets a sequence number.

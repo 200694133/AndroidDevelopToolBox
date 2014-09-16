@@ -19,4 +19,9 @@ public interface ResponseDelivery {
      * Posts an error for the given request.
      */
     public void postError(Request<?> request, XError error);
+
+    /**
+     * Post an canceled state to given request.
+     */
+    public void postCanceled(Request request);
 }

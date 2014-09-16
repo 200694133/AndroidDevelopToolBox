@@ -112,7 +112,7 @@ public class TestDiskCacheThread extends Thread{
         private final String mKey;
 
         public DownloadRequest(String url,DiskStorage fixSizeDiskStorage,String key,
-                               DownloadRequestExecutor requestExecutor, Response.ErrorListener listener) {
+                               DownloadRequestExecutor requestExecutor, Response.Listener listener) {
             super(MagicApplication.getInstance().getRequestQueue(),requestExecutor, null);
             mFixSizeDiskStorage = fixSizeDiskStorage;
             mKey = key;

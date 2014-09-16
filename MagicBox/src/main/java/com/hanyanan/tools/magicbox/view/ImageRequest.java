@@ -40,9 +40,8 @@ class ImageRequest extends NetworkRequest {
     }
 
     public ImageRequest(RequestQueue requestQueue,String url,ResponseDelivery delivery,
-                        Response.Listener<Bitmap> listener, Response.ErrorListener listener1) {
+                        Response.Listener<Bitmap> listener) {
         super(requestQueue, S_BITMAP_REQUEST_EXECUTOR,parseHttpRequestParam(url));
-        setErrorListener(listener1);
         setListener(listener);
     }
 

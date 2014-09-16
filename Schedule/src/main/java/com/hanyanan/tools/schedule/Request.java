@@ -6,8 +6,7 @@ import android.util.Log;
  * Created by hanyanan on 2014/7/29.
  */
 public abstract class Request<P extends RequestParam> implements Comparable<Request>{
-    /** Listener interface for errors. */
-    protected Response.ErrorListener mErrorListener;
+    /** Listener interface for current request. */
     protected Response.Listener mResultListener;
     private static int sSequence = 0;
     /** Sequence number of this request, used to enforce FIFO ordering. */
@@ -17,7 +16,7 @@ public abstract class Request<P extends RequestParam> implements Comparable<Requ
     /**
      * Request status
      */
-    static enum Status{
+    public static enum Status{
         /**
          * It's idle status, it forbid to running.
          */
@@ -35,6 +34,12 @@ public abstract class Request<P extends RequestParam> implements Comparable<Requ
          */
         Finish
     }
+//    /** A listener to listen the state of current request.It's provide a flexible way to get current
+//     * state.User can get the state by Status or from a method.
+//     * */
+//    private RequestExStateListener mRequestExStateListener = null;
+//    /** Delivery state to listener. */
+//    private RequestExResponseDelivery mRequestExResponseDelivery;
     /** Whether or not a response has been delivered for this request yet. */
     protected boolean mResponseDelivered = false;
     // A cheap variant of request tracing used to dump slow requests.
@@ -65,9 +70,9 @@ public abstract class Request<P extends RequestParam> implements Comparable<Requ
      * an already-parsed response.
      */
     public Request(RequestQueue requestQueue,RequestExecutor requestExecutor, ResponseDelivery responseDelivery,
-                   RetryPolicy retryPolicy, Response.ErrorListener listener) {
+                   RetryPolicy retryPolicy, Response.Listener listener) {
         mRequestQueue = requestQueue;
-        mErrorListener = listener;
+        mResultListener = listener;
         mResponseDelivery = responseDelivery;
         mRequestExecutor = requestExecutor;
         mRetryPolicy = retryPolicy;
@@ -83,7 +88,7 @@ public abstract class Request<P extends RequestParam> implements Comparable<Requ
         mRetryPolicy = requestQueue.getDefaultRetryPolicy();
         mRequestBirthTime = System.currentTimeMillis();
         setRequestParam(param);
-        setErrorListener(requestQueue.getDefaultErrorListener());
+        setListener(requestQueue.getDefaultResponseListener());
         setStatus(Status.Pending);
     }
 
@@ -103,10 +108,6 @@ public abstract class Request<P extends RequestParam> implements Comparable<Requ
         mResultListener = l;
         return this;
     }
-    public final Request setErrorListener(Response.ErrorListener listener){
-        mErrorListener = listener;
-        return this;
-    }
     public final Request setRequestParam(P requestParam){
         mRequestParam = requestParam;
         return this;
@@ -119,6 +120,17 @@ public abstract class Request<P extends RequestParam> implements Comparable<Requ
     public final boolean isCanceled(){
         return isCanceled;
     }
+
+//    /**  */
+//    public final Request<P> setRequestExStateListener(RequestExStateListener listener){
+//        this.mRequestExStateListener = listener;
+//        return this;
+//    }
+//
+//    public RequestExStateListener getRequestExStateListener(){
+//        return mRequestExStateListener;
+//    }
+
 
     /**
      * Mark this request as canceled.  No callback will be delivered.
@@ -226,11 +238,10 @@ public abstract class Request<P extends RequestParam> implements Comparable<Requ
      * be non-null; responses that fail to parse are not delivered.
      * @param response The parsed response returned by
      */
-    public <T> void deliverResponse(T response){
+    public final <T> void deliverResponse(T response){
         if(null != mResultListener){
-            mResultListener.onResponse(response);
+            mResultListener.onResponse(this,response);
         }
-        //TODO
     }
     /**
      * Delivers error message to the ErrorListener that the Request was
@@ -238,13 +249,19 @@ public abstract class Request<P extends RequestParam> implements Comparable<Requ
      *
      * @param error Error details
      */
-    public void deliverError(XError error) {
-        if (mErrorListener != null) {
-            mErrorListener.onErrorResponse(error);
+    public final void deliverError(XError error) {
+        if (mResultListener != null) {
+            mResultListener.onErrorResponse(this,error);
         }
         //TODO
     }
 
+    public final void deliverCanceled(){
+        if (mResultListener != null) {
+            mResultListener.onCanceledResponse(this);
+        }
+        //TODO
+    }
     /**
      * When exception occurred, retry to run this request
      * @param exception the exception occurred.

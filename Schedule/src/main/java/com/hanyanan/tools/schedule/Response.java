@@ -6,20 +6,18 @@ package com.hanyanan.tools.schedule;
  * @param <T> Parsed type of this response
  */
 public class Response<T> {
-
     /** Callback interface for delivering parsed responses. */
     public interface Listener<T> {
-        /** Called when a response is received. */
-        public void onResponse(T response);
-    }
+        /** Called when a response is received.It's called when get result success. */
+        public void onResponse(Request request, T response);
 
-    /** Callback interface for delivering error responses. */
-    public interface ErrorListener {
+        /** Called when finish a request in canceled mode.*/
+        public void onCanceledResponse(Request request);
         /**
          * Callback method that an error has been occurred with the
          * provided error code and optional user-readable message.
          */
-        public void onErrorResponse(XError error);
+        public void onErrorResponse(Request request, XError error);
     }
 
     /** Returns a successful response containing the parsed result. */

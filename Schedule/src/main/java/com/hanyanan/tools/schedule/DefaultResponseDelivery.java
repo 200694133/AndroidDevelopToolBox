@@ -69,6 +69,12 @@ public class DefaultResponseDelivery implements ResponseDelivery {
         mResponsePoster.execute(new ResponseDeliveryRunnable(request, response, null));
     }
 
+    @Override
+    public void postCanceled(Request request) {
+        request.addMarker("post-Canceled");
+        mResponsePoster.execute(new ResponseDeliveryRunnable(request, null, null));
+    }
+
     /**
      * A Runnable used for delivering network responses to a listener on the
      * main thread.
@@ -91,13 +97,12 @@ public class DefaultResponseDelivery implements ResponseDelivery {
             // If this request has canceled, finish it and don't deliver.
             if (mRequest.isCanceled()) {
                 mRequest.finish("canceled-at-delivery");
-                return;
-            }
-
-//            // Deliver a normal response or error, depending.
-            if (mResponse.isSuccess()) {
+                mRequest.deliverCanceled();
+            }else if (mResponse.isSuccess()) { // Deliver a normal response or error, depending.
+                mRequest.finish("finished-at-success");
                 mRequest.deliverResponse(mResponse.result);
             } else {
+                mRequest.finish("finished-at-error");
                 mRequest.deliverError(mResponse.error);
             }
 //
