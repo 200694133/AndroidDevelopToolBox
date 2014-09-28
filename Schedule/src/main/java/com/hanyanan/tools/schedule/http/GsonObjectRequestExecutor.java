@@ -14,13 +14,16 @@ import org.json.JSONObject;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.util.List;
 
 /**
  * Created by hanyanan on 2014/7/30.
  */
 public class GsonObjectRequestExecutor<T> implements RequestExecutor<T, NetworkRequest> {
     private final HttpInterface mNetwork;
-    public GsonObjectRequestExecutor(HttpInterface network){
+    private final Class<T> clazz;
+    public GsonObjectRequestExecutor(HttpInterface network, Class<T> clazz){
+        this.clazz = clazz;
         mNetwork = network;
     }
     @Override
@@ -36,7 +39,7 @@ public class GsonObjectRequestExecutor<T> implements RequestExecutor<T, NetworkR
                 Response.success((T)null);
             }
             Gson gson = new Gson();
-            T t = (T)gson.fromJson(jsonString, new TypeToken<T>() {}.getType());
+            T t = (T)gson.fromJson(jsonString, clazz);
             return Response.success(t);
         } catch (UnsupportedEncodingException e) {
             return Response.error(new ParseError(e));

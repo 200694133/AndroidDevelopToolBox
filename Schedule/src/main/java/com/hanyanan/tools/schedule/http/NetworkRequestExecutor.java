@@ -6,6 +6,7 @@ import com.hanyanan.tools.schedule.XError;
 
 /**
  * Created by hanyanan on 2014/7/29.
+ * @deprecated
  */
 public class NetworkRequestExecutor implements RequestExecutor<byte[], NetworkRequest>{
     private final Network mNetwork;

@@ -17,7 +17,7 @@ import java.util.HashMap;
 class ImageRequest extends NetworkRequest {
     private static final BitmapRequestExecutor S_BITMAP_REQUEST_EXECUTOR = new BitmapRequestExecutor();
     private int mMaxWidth, mMaxHeight;
-
+    private String mKey;
     public void setMaxWidth(int width){
         mMaxWidth = width;
     }
@@ -43,6 +43,16 @@ class ImageRequest extends NetworkRequest {
                         Response.Listener<Bitmap> listener) {
         super(requestQueue, S_BITMAP_REQUEST_EXECUTOR,parseHttpRequestParam(url));
         setListener(listener);
+    }
+
+    public ImageRequest setKey(String key){
+        mKey = key;
+        return this;
+    }
+
+    public String getKey(){
+        if(null != mKey) return mKey;
+        return super.getKey();
     }
 
     private static HttpRequestParam parseHttpRequestParam(String url){

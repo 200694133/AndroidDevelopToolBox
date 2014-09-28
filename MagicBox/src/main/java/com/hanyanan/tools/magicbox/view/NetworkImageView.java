@@ -6,6 +6,7 @@ import android.os.Handler;
 import android.os.Looper;
 import android.text.TextUtils;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.util.LruCache;
 import android.widget.ImageView;
 
@@ -20,15 +21,16 @@ import com.hanyanan.tools.schedule.XError;
 import com.hanyanan.tools.*;
 
 import java.lang.ref.WeakReference;
+import java.util.HashMap;
 
 /**
  * Created by hanyanan on 2014/8/12.
  */
 public class NetworkImageView extends ImageView implements Response.Listener<Bitmap>{
-    public static int sDefaultImageId = R.drawable.ic_launcher;
-    public static int sDefaultFaultId = R.drawable.ic_launcher;
-    private int mDefaultImageId = sDefaultImageId;
-    private int mDefaultFaultId = sDefaultFaultId;
+//    public static int sDefaultImageId = R.drawable.ic_launcher;
+//    public static int sDefaultFaultId = R.drawable.ic_launcher;
+//    private int mDefaultImageId = sDefaultImageId;
+//    private int mDefaultFaultId = sDefaultFaultId;
     private String mUrl;
     private ImageRequest mImageRequest = null;
     private boolean attach = false;
@@ -46,19 +48,29 @@ public class NetworkImageView extends ImageView implements Response.Listener<Bit
      * Sets the default image resource ID to be used for this view until the attempt to load it
      * completes.
      */
-    public void setDefaultImageId(int id){
-        MagicUtils.checkThreadState();
-        mDefaultImageId = id;
-    }
+//    public void setDefaultImageId(int id){
+//        MagicUtils.checkThreadState();
+//        mDefaultImageId = id;
+//    }
     /**
      * Sets the error image resource ID to be used for this view in the event that the image
      * requested fails to load.
      */
-    public void setDefaultFaultId(int id){
-        MagicUtils.checkThreadState();
-        mDefaultFaultId = id;
+//    public void setDefaultFaultId(int id){
+//        MagicUtils.checkThreadState();
+//        mDefaultFaultId = id;
+//    }
+    public void cancelUrl(){
+        if (mImageRequest != null) {
+            mImageRequest.cancel();
+        }
+        mImageRequest = null;
     }
     public void setUrl(String url){
+        setUrl(url,null,null);
+    }
+
+    public void setUrl(String url,HashMap<String,String> property,String key){
         MagicUtils.checkThreadState();
         if(mUrl == url) return ;
         if(!TextUtils.isEmpty(mUrl) && mUrl.equals(url)) return ;
@@ -67,25 +79,68 @@ public class NetworkImageView extends ImageView implements Response.Listener<Bit
             mImageRequest.cancel();
         }
         mImageRequest = null;
-        setImageBitmap(null);
+//        setImageBitmap(null);
         mUrl = url;
-        loadImageIfNecessary();
-    }
-    void loadImageIfNecessary(){
-        if(!attach || null==mUrl) return ;
+
         MagicApplication mApp = MagicApplication.getInstance();
         if(null == mApp) return ;
         LruCache<String, Bitmap> cache = mApp.getBitmapLruCache();
         Bitmap bitmap = cache.get(mUrl);
         if(null != bitmap) {
             this.setImageBitmap(bitmap);
+            return ;
         }
+
         mImageRequest = new ImageRequest(MagicApplication.getInstance().getRequestQueue(),
                 mUrl,new DefaultResponseDelivery(new Handler(Looper.getMainLooper())),this );
-        mImageRequest.setMaxWidth(getMaxWidth());
-        mImageRequest.setMaxHeight(getMaxHeight());
-        mApp.getRequestQueue().add(mImageRequest);
+        mImageRequest.setKey(key);
+        if(null != property) mImageRequest.getRequestParam().setHeaderProperty(property);
+        loadImageIfNecessary();
     }
+
+
+    private void loadImageIfNecessary(){
+        if(!attach || null==mUrl) return ;
+        MagicApplication mApp = MagicApplication.getInstance();
+        if(null == mApp) return ;
+        if(null != mImageRequest){
+            if(null != mMaxWidth)mImageRequest.setMaxWidth(mMaxWidth);
+            if(null != mMaxHeight) mImageRequest.setMaxHeight(mMaxHeight);
+//            mImageRequest.setMaxWidth(getMaxWidth());
+//            mImageRequest.setMaxHeight(getMaxHeight());
+            mApp.getRequestQueue().add(mImageRequest);
+        }
+    }
+
+    private Integer mMaxWidth = null;
+    private Integer mMaxHeight = null;
+    public void setMaxWidth(int width){
+        mMaxWidth = width;
+        super.setMaxWidth(width);
+    }
+
+    public void setMaxHeight(int height){
+        mMaxHeight = height;
+        super.setMaxHeight(height);
+    }
+
+
+//    void loadImageIfNecessary(HashMap<String,String> property){
+//        if(!attach || null==mUrl) return ;
+//        MagicApplication mApp = MagicApplication.getInstance();
+//        if(null == mApp) return ;
+//        LruCache<String, Bitmap> cache = mApp.getBitmapLruCache();
+//        Bitmap bitmap = cache.get(mUrl);
+//        if(null != bitmap) {
+//            this.setImageBitmap(bitmap);
+//        }
+//        mImageRequest = new ImageRequest(MagicApplication.getInstance().getRequestQueue(),
+//                mUrl,new DefaultResponseDelivery(new Handler(Looper.getMainLooper())),this );
+//        if(null != property) mImageRequest.getRequestParam().setHeaderProperty(property);
+//        mImageRequest.setMaxWidth(getMaxWidth());
+//        mImageRequest.setMaxHeight(getMaxHeight());
+//        mApp.getRequestQueue().add(mImageRequest);
+//    }
 
     @Override
     protected void onLayout(boolean changed, int left, int top, int right, int bottom) {
@@ -114,7 +169,8 @@ public class NetworkImageView extends ImageView implements Response.Listener<Bit
 
     @Override
     public void onErrorResponse(Request request, XError error) {
-        this.setImageResource(mDefaultFaultId);
+//        this.setImageResource(mDefaultFaultId);
+        Log.d("ddd", "error "+error.toString());
     }
 
     @Override
@@ -132,5 +188,6 @@ public class NetworkImageView extends ImageView implements Response.Listener<Bit
     @Override
     public void onCanceledResponse(Request request) {
         //TODO
+        Log.d("ddd", "onCanceledResponse");
     }
 }

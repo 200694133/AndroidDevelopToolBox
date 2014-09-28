@@ -2,14 +2,10 @@ package com.hanyanan.tools.schedule.http;
 
 import com.hanyanan.tools.schedule.RequestParam;
 
-import java.io.File;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import javax.net.ssl.SSLSocketFactory;
 
@@ -49,8 +45,8 @@ public class HttpRequestParam implements RequestParam{
     private TransactionType mTransactionType = TransactionType.DEFAULT;
     private final HashMap<String,String> mUrlParams = new HashMap<String, String>();
     private final HashMap<String,String> mHeaderMaps = new HashMap<String, String>();
-    private ContentRangeWrapper mDownLoadRange = null;
-    private StreamWrapper mStreamWrapper;
+    private List<UpLoadWrapper> mUpLoadList;
+    private ContentRangeWrapper mDownLoadContentRangeWrapper;
     public HttpRequestParam(String url){
         mUrl = url;
     }
@@ -116,6 +112,10 @@ public class HttpRequestParam implements RequestParam{
     public int getConnectTimeOut(){
         return mConnectionTimeOut;
     }
+
+    public ContentRangeWrapper getDownLoadContentRangeWrapper(){
+        return mDownLoadContentRangeWrapper;
+    }
 //    public static class FileWrapper {
 //        public final File file;
 //        public final String contentType;
@@ -135,24 +135,7 @@ public class HttpRequestParam implements RequestParam{
 //        }
 //    }
 
-    public HttpRequestParam setDownLoadRange(int offset, int length){
-        mDownLoadRange = new ContentRangeWrapper(offset,length);
-        return this;
-    }
-    private boolean isDownLoadMode = true;
-    public HttpRequestParam setDownLoadMode(boolean isDownLoadMode){
-        this.isDownLoadMode = isDownLoadMode;
-        return this;
-    }
-    /**
-     * DownLoad range of content
-     * @return content range
-     */
-    public ContentRangeWrapper getContentRangeWrapper(){
-        return mDownLoadRange;
-    }
-
-    public List<UploadWrapper> getUploadWrappers(){
+    public List<UpLoadWrapper> getUploadWrappers(){
         return null;
     }
 
@@ -160,20 +143,30 @@ public class HttpRequestParam implements RequestParam{
         mHeaderMaps.put(key, value);
         return this;
     }
+    public HttpRequestParam setHeaderProperty(HashMap<String,String> property){
+        mHeaderMaps.putAll(property);
+        return this;
+    }
+
 
     public HashMap<String,String> getHttpHeader(){
         return mHeaderMaps;
     }
-    public boolean isDownloadMode(){
-        return isDownLoadMode;
-    }
-    public static class UploadWrapper{
+
+    public static class UpLoadWrapper {
         public final ContentRangeWrapper contentRangeWrapper;
         public final InputStream inputStream;
         public final String name;
         public final String contentType;
         public final boolean autoClose;
-        public UploadWrapper(InputStream inputStream,ContentRangeWrapper rangeWrapper,String name, String contentType,boolean autoClose){
+        public UpLoadWrapper(InputStream inputStream){
+            this.contentRangeWrapper = null;
+            this.autoClose = false;
+            this.contentType = "application/x-www-form-urlencoded;charset=utf-8";
+            this.inputStream = inputStream;
+            this.name = null;
+        }
+        public UpLoadWrapper(InputStream inputStream, ContentRangeWrapper rangeWrapper, String name, String contentType, boolean autoClose){
             this.contentRangeWrapper = rangeWrapper;
             this.autoClose = autoClose;
             this.contentType = contentType;
@@ -190,28 +183,28 @@ public class HttpRequestParam implements RequestParam{
             this.length = length;
         }
     }
-    public static class StreamWrapper {
-        public final InputStream inputStream;
-        public ContentRangeWrapper inputRangeWrapper;
-        public final String name;
-        public final String contentType;
-        public final boolean autoClose;
-
-        public StreamWrapper(InputStream inputStream,String name, String contentType, boolean autoClose) {
-            this.inputStream = inputStream;
-            this.name = name;
-            this.contentType = contentType;
-            this.autoClose = autoClose;
-        }
-
-        public static StreamWrapper newInstance(InputStream inputStream,OutputStream outputStream, String name, String contentType, boolean autoClose) {
-            return new StreamWrapper(
-                    inputStream,
-                    name,
-                    contentType == null ? APPLICATION_OCTET_STREAM : contentType,
-                    autoClose);
-        }
-    }
+//    public static class DownLoadWrapper {
+//        public final InputStream inputStream;
+//        public ContentRangeWrapper inputRangeWrapper;
+//        public final String name;
+//        public final String contentType;
+//        public final boolean autoClose;
+//
+//        public DownLoadWrapper(InputStream inputStream,String name, String contentType, boolean autoClose) {
+//            this.inputStream = inputStream;
+//            this.name = name;
+//            this.contentType = contentType;
+//            this.autoClose = autoClose;
+//        }
+//
+//        public static DownLoadWrapper newInstance(InputStream inputStream, String name, String contentType, boolean autoClose) {
+//            return new DownLoadWrapper(
+//                    inputStream,
+//                    name,
+//                    contentType == null ? APPLICATION_OCTET_STREAM : contentType,
+//                    autoClose);
+//        }
+//    }
     public static class ProxyWrapper{
         public final String address;
         public final String port;

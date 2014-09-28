@@ -20,7 +20,9 @@ import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.SocketTimeoutException;
 import java.net.URLEncoder;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -106,6 +108,8 @@ public class HttpUtils {
             }
         } catch (ServerError serverError) {
             throw new XError(serverError);
+        }finally {
+            if(null != httpResponse && null!= httpResponse.getEntity()) httpResponse.getEntity().consumeContent();
         }
     }
 
@@ -114,20 +118,34 @@ public class HttpUtils {
     public static byte[] entityToBytes(HttpEntity entity) throws IOException, ServerError {
 //        PoolingByteArrayOutputStream bytes =
 //                new PoolingByteArrayOutputStream(mPool, (int) entity.getContentLength());
-        byte[] buffer = new byte[(int) entity.getContentLength()];
+//        byte[] buffer = new byte[(int) entity.getContentLength()];
+        List<Byte> buffList = new ArrayList<Byte>();
+        byte[] buffer = new byte[4*1024];
         try {
             InputStream in = entity.getContent();
-            if (in == null) {
-                throw new ServerError();
+            while(true){
+                int length = in.read(buffer);
+                if(length <= 0) break;
+                for(int i =0 ;i <length;++i){
+                    buffList.add(buffer[i]);
+                }
             }
-            in.read(buffer);
+//            InputStream in = entity.getContent();
+//            if (in == null) {
+//                throw new ServerError();
+//            }
+//            in.read(buffer);
 //            buffer = mPool.getBuf(1024);
 //            int count;
 //            while ((count = in.read(buffer)) != -1) {
 //                bytes.write(buffer, 0, count);
 //            }
 //            return bytes.toByteArray();
-            return buffer;
+            byte[] res= new byte[buffList.size()];
+            for(int i =0;i<buffList.size();++i){
+                res[i] = buffList.get(i);
+            }
+            return res;
         } finally {
             try {
                 // Close the InputStream and release the resources by "consuming the content".
@@ -168,7 +186,7 @@ public class HttpUtils {
             }
         }
 
-        return HTTP.DEFAULT_CONTENT_CHARSET;
+        return "UTF-8";
     }
 
     public static String encodeParam(Map<String, String> params){
@@ -180,6 +198,11 @@ public class HttpUtils {
                 encodedParams.append('=');
                 encodedParams.append(URLEncoder.encode(entry.getValue(), encodeing));
                 encodedParams.append('&');
+            }
+            if(encodedParams.length() > 0){
+                if(encodedParams.charAt(encodedParams.length()-1) == '&'){
+                    return encodedParams.substring(0, encodedParams.length()-1);
+                }
             }
             return encodedParams.toString();
         } catch (UnsupportedEncodingException uee) {

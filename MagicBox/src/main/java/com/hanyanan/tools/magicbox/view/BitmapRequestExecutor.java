@@ -15,6 +15,9 @@ import com.hanyanan.tools.schedule.http.HttpInterface;
 import com.hanyanan.tools.schedule.http.NetworkError;
 import com.hanyanan.tools.schedule.http.NetworkRequest;
 import com.hanyanan.tools.storage.disk.DiskStorage;
+
+import org.apache.http.message.BasicHttpResponse;
+
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -25,11 +28,14 @@ public class BitmapRequestExecutor implements RequestExecutor<Bitmap,ImageReques
     private static final String TAG = "BitmapExecutor";
     private static Response downLoad(HttpInterface httpExecutor,DiskStorage fixSizeDiskStorage,NetworkRequest request) throws NetworkError {
         try {
-            HttpInterface.HttpResponseWrapper httpResponseWrapper = httpExecutor.performDownLoadRequest(request);
-            if(null == httpResponseWrapper || httpResponseWrapper.inputStream == null) return Response.success(request.getKey());
-            Log.d(TAG, "performRequest InputStream " + httpResponseWrapper.inputStream);
-            fixSizeDiskStorage.save(request.getKey(), httpResponseWrapper.inputStream);
-            httpResponseWrapper.inputStream.close();
+            BasicHttpResponse basicHttpResponse = httpExecutor.performDownLoadRequest(request);
+            if(null == basicHttpResponse || basicHttpResponse.getEntity() ==null) return Response.success(request.getKey());
+            InputStream inputStream = basicHttpResponse.getEntity().getContent();
+            if(null == inputStream)return Response.success(request.getKey());
+            Log.d(TAG, "performRequest InputStream " + inputStream);
+            fixSizeDiskStorage.save(request.getKey(), inputStream);
+            inputStream.close();
+            basicHttpResponse.getEntity().consumeContent();
             Log.d(TAG, "download "+request.getKey()+"    "+request.getUrl()+"  success");
             return Response.success(request.getKey());
         } catch (IOException e) {
@@ -114,7 +120,6 @@ public class BitmapRequestExecutor implements RequestExecutor<Bitmap,ImageReques
             if(!cache.contains(key)){
                 downLoad(new HttpConnectionImpl(), request.getFixSizeDiskStorage(), request);
             }
-
 
             bitmap = parseBitmap(cache, request.getKey(),request.getMaxWidth(),request.getMaxHeight());
         } catch (IOException e) {

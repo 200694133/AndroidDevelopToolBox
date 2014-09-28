@@ -50,7 +50,7 @@ public abstract class Request<P extends RequestParam> implements Comparable<Requ
     /** retry policy used to retry current request when request failed occurred. */
     protected final RetryPolicy mRetryPolicy;
     /** used to delivery response. */
-    protected final ResponseDelivery mResponseDelivery;
+    protected ResponseDelivery mResponseDelivery;
     /** An opaque token tagging this request; used for bulk cancellation. */
     protected Object mTag;
 
@@ -94,6 +94,10 @@ public abstract class Request<P extends RequestParam> implements Comparable<Requ
 
     public final RequestExecutor getRequestExecutor(){
         return mRequestExecutor;
+    }
+    public final Request setResponseDelivery(ResponseDelivery delivery){
+        mResponseDelivery = delivery;
+        return this;
     }
     public final ResponseDelivery getResponseDelivery(){
         return mResponseDelivery;

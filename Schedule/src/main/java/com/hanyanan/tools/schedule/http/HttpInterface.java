@@ -18,9 +18,17 @@ import java.util.Set;
  * Created by Administrator on 2014/8/30.
  */
 public interface HttpInterface {
-    public boolean performUpLoadRequest(NetworkRequest httpRequest)throws  IOException;
+
+    public BasicHttpResponse performUpLoadRequest(NetworkRequest httpRequest)throws  IOException;
+
+
     public BasicHttpResponse performSimpleRequest(NetworkRequest httpRequest) throws IOException, ServerError;
-    public HttpResponseWrapper performDownLoadRequest(NetworkRequest httpRequest)throws  IOException;
+
+
+    public BasicHttpResponse performDownLoadRequest(NetworkRequest httpRequest)throws  IOException;
+
+
+
     public static class HttpResponseWrapper{
         public InputStream inputStream;
         public BasicHttpResponse basicHttpResponse;
@@ -32,6 +40,4 @@ public interface HttpInterface {
             this.httpURLConnection = httpURLConnection;
         }
     }
-
-
 }
