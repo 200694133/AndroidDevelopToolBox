@@ -99,7 +99,11 @@ public class HttpConnectionImpl implements HttpInterface{
         String urlPath = param.getUrl();
         {//在get模式下，封装参数到url
             if (param.getMethod() == HttpRequestParam.Method.GET && param.getUrlPramsMaps() != null) {
-                urlPath = urlPath + "?" + HttpUtils.encodeParam(param.getUrlPramsMaps());
+                if (urlPath.contains("?")) {
+                    urlPath = urlPath + "&" + HttpUtils.encodeParam(param.getUrlPramsMaps());
+                } else {
+                    urlPath = urlPath + "?" + HttpUtils.encodeParam(param.getUrlPramsMaps());
+                }
             }
         }
         URL url = new URL(urlPath);
@@ -180,7 +184,11 @@ public class HttpConnectionImpl implements HttpInterface{
         String urlPath = param.getUrl();
         {//在get模式下，封装参数到url
             if (param.getMethod() == HttpRequestParam.Method.GET && param.getUrlPramsMaps() != null && param.getUrlPramsMaps().size()>0) {
-                urlPath = urlPath + "?" + HttpUtils.encodeParam(param.getUrlPramsMaps());
+                if (urlPath.contains("?")) {
+                    urlPath = urlPath + "&" + HttpUtils.encodeParam(param.getUrlPramsMaps());
+                } else {
+                    urlPath = urlPath + "?" + HttpUtils.encodeParam(param.getUrlPramsMaps());
+                }
             }
         }
         URL url = new URL(urlPath);

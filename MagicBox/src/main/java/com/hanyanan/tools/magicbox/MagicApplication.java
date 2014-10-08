@@ -5,6 +5,7 @@ import android.graphics.Bitmap;
 import android.os.Environment;
 import android.text.TextUtils;
 import android.util.LruCache;
+import android.view.Display;
 
 import com.hanyanan.tools.schedule.RequestQueue;
 import com.hanyanan.tools.schedule.Response;
@@ -86,6 +87,11 @@ public class MagicApplication extends Application {
         return this;
     }
 
+    protected HttpRequestParam getHttpRequestParam(String url){
+        HttpRequestParam param = new HttpRequestParam(url);
+
+        return param;
+    }
     /**
      * Create a http and parse to object
      * @param url
@@ -93,7 +99,7 @@ public class MagicApplication extends Application {
      * @return
      */
     public <T> NetworkRequest newGsonHttpRequest(String url, Response.Listener<T> listener, Class<T>  t){
-        HttpRequestParam param = new HttpRequestParam(url);
+        HttpRequestParam param = getHttpRequestParam(url);
         param.setHeaderProperty(mGlobalHttpProperty);
         GsonObjectRequestExecutor<T> executor = new GsonObjectRequestExecutor<T>(new HttpConnectionImpl(),t);
         NetworkRequest networkRequest = new NetworkRequest(mRequestQueue,executor, param);
@@ -102,7 +108,7 @@ public class MagicApplication extends Application {
     }
 
     public NetworkRequest newStringHttpRequest(String url, Response.Listener<String> listener){
-        HttpRequestParam param = new HttpRequestParam(url);
+        HttpRequestParam param = getHttpRequestParam(url);
         param.setHeaderProperty(mGlobalHttpProperty);
         StringRequestExecutor executor = new StringRequestExecutor(new HttpConnectionImpl());
         NetworkRequest networkRequest = new NetworkRequest(mRequestQueue,executor, param);
@@ -111,7 +117,7 @@ public class MagicApplication extends Application {
     }
 
     public NetworkRequest newHttpRequest(String url, Response.Listener<byte[]> listener){
-        HttpRequestParam param = new HttpRequestParam(url);
+        HttpRequestParam param = getHttpRequestParam(url);
         param.setHeaderProperty(mGlobalHttpProperty);
         RawRequestExecutor executor = new RawRequestExecutor(new HttpConnectionImpl());
         NetworkRequest networkRequest = new NetworkRequest(mRequestQueue,executor, param);
