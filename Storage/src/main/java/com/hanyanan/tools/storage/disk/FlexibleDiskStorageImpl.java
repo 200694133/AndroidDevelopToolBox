@@ -3,9 +3,10 @@ package com.hanyanan.tools.storage.disk;
 import android.text.TextUtils;
 import android.util.Log;
 
+import com.hanyanan.tools.storage.Entry;
 import com.hanyanan.tools.storage.Error.BusyInUsingError;
+import com.hanyanan.tools.storage.StorageLog;
 import com.hanyanan.tools.storage.Utils;
-
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
@@ -18,6 +19,7 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -57,6 +59,7 @@ class FlexibleDiskStorageImpl implements IStreamStorage {
     protected final int appVersion;
     protected Writer journalWriter;
     protected final LinkedHashMap<String, Entry> lruEntries = new LinkedHashMap<String, Entry>(0, 0.75f, true);
+    protected final Authority mAuthority;
     protected int redundantOpCount;
     protected long mCurrentSize = 0;
 
@@ -99,6 +102,7 @@ class FlexibleDiskStorageImpl implements IStreamStorage {
         this.journalFile = new File(directory, JOURNAL_FILE);
         this.journalFileTmp = new File(directory, JOURNAL_FILE_TEMP);
         this.journalFileBackup = new File(directory, JOURNAL_FILE_BACKUP);
+        this.mAuthority = new AuthorityImpl();
     }
 
     /**
@@ -126,11 +130,11 @@ class FlexibleDiskStorageImpl implements IStreamStorage {
         FlexibleDiskStorageImpl cache = new FlexibleDiskStorageImpl(directory, appVersion);
         if (cache.journalFile.exists()) {
             try {
-                cache.readJournal();
-                cache.processJournal();
                 cache.journalWriter = new BufferedWriter(
                         new OutputStreamWriter(new FileOutputStream(cache.journalFile, true),
                                 Utils.ASCII_CHARSET));
+                cache.readJournal();
+                cache.processJournal();
                 return cache;
             } catch (IOException journalIsCorrupt) {
                 System.out.println("DiskLruCache " + directory + " is corrupt: "
@@ -189,11 +193,20 @@ class FlexibleDiskStorageImpl implements IStreamStorage {
             lruEntries.put(key, entry);
         }
         if(journalLine.getAction() == Action.CLEAN_ACTION){
-            entry.readable = true;
-            entry.currentEditor = null;
-            entry.setLengths(journalLine.mSize);
+            if(mAuthority.isValid(journalLine.mExpireTime)){
+                entry.readable = true;
+                entry.currentEditor = null;
+                entry.expireTime = journalLine.mExpireTime;
+                entry.setLengths(journalLine.mSize);
+            }else{
+                entry.currentEditor = new Editor(entry);//same to dirty to delete the useless file
+                StorageLog.d("readJournalLine","line time expired!");
+            }
         }else if(journalLine.getAction() == Action.DIRTY_ACTION){
             entry.currentEditor = new Editor(entry);
+////            lruEntries.put(key, entry);
+//            //在读取文件中，第一次读取时，约到dirty时表明需要刷新，是旧的数据
+//            lruEntries.remove(key);
         }else if(journalLine.getAction() == Action.READ_ACTION){
             //do nothing
         }
@@ -204,16 +217,22 @@ class FlexibleDiskStorageImpl implements IStreamStorage {
      */
     protected void processJournal() throws IOException {
         deleteIfExists(journalFileTmp);
+        List<Entry> addList = new ArrayList<Entry>();
         for (Iterator<Entry> i = lruEntries.values().iterator(); i.hasNext(); ) {
             Entry entry = i.next();
             if (entry.currentEditor == null) {
-                onEntryAdded(entry.key, entry.getLength());
+                addList.add(entry);
+//                onEntryAdded(entry.key, entry.getLength());
             } else {
                 entry.currentEditor = null;
                 deleteIfExists(entry.getCleanFile());
                 deleteIfExists(entry.getDirtyFile());
                 i.remove();//delete from list
             }
+        }
+
+        for(Entry entry : addList){
+            onEntryAdded(entry.key, entry.getLength());
         }
     }
 
@@ -230,6 +249,16 @@ class FlexibleDiskStorageImpl implements IStreamStorage {
             writer.write(Integer.toString(appVersion));
             writer.write("\n");
             writer.write("\n");
+
+            //delete expire entry
+            Collection<Entry> set =lruEntries.values();
+            for (Entry entry : set) {
+                if (entry.currentEditor != null && !mAuthority.isValid(entry.expireTime)) {
+                    lruEntries.remove(entry.getKey());
+                    writer.write(parseJournal(Action.REMOVE_ACTION, entry));
+                }
+            }
+
             for (Entry entry : lruEntries.values()) {
                 if (entry.currentEditor != null) {
                     writer.write(parseJournal(Action.DIRTY_ACTION, entry));
@@ -311,6 +340,12 @@ class FlexibleDiskStorageImpl implements IStreamStorage {
                 return null;
             }
 
+            if(!mAuthority.isValid(entry.expireTime)){
+                StorageLog.d("Get", key + " expire time! Remove it!");
+                remove(key);
+                return null;
+            }
+
             redundantOpCount++;
 //            journalWriter.append(Action.READ_ACTION.getAction() + ' ' + key + '\n');
             writeToJournal(parseJournal(Action.READ_ACTION, entry));
@@ -353,9 +388,10 @@ class FlexibleDiskStorageImpl implements IStreamStorage {
                 entry = new Entry(key);
                 Editor editor = new Editor(entry);
                 entry.currentEditor = editor;
+                entry.readable = false;
                 writeToJournal(parseJournal(Action.DIRTY_ACTION, entry));
-                return editor;
 //                lruEntries.put(key, entry);
+                return editor;
             }else{
                 if (entry.currentEditor != null) {
                     throw new BusyInUsingError("Another edit is in progress, please try later!");
@@ -445,7 +481,7 @@ class FlexibleDiskStorageImpl implements IStreamStorage {
      * @return true if an entry was removed.
      */
     public boolean remove(String key) throws IOException {
-        Log.d("FixSizeDiskStorage","try to remove "+key);
+        StorageLog.d("FixSizeDiskStorage","try to remove "+key);
         synchronized (this) {
             checkNotClosed();
             validateKey(key);
@@ -519,6 +555,7 @@ class FlexibleDiskStorageImpl implements IStreamStorage {
                 }
             }
         }
+
         /** Returns the byte length of the value. */
         public long getLength() {
             return lengths;
@@ -538,8 +575,8 @@ class FlexibleDiskStorageImpl implements IStreamStorage {
         private boolean isIllegal = false;
         Action mAction;
         String mKey;
-        long mActionTime;
-        long mExpireTime;
+        long mActionTime = -1;
+        long mExpireTime = -1;
         long mSize;
         private JournalLine(String line){
             if(TextUtils.isEmpty(line)) {
@@ -591,11 +628,12 @@ class FlexibleDiskStorageImpl implements IStreamStorage {
         private final Entry entry;
         private boolean isWritten = false;
         private boolean hasErrors = false;
-        private boolean committed = false;
+        private boolean finish = false;
         private Editor(Entry entry) {
             this.entry = entry;
         }
         public boolean commit() throws IOException {
+            finish = true;
             boolean success = false;
             if (hasErrors) {
                 success = completeEdit(this, false);
@@ -603,10 +641,11 @@ class FlexibleDiskStorageImpl implements IStreamStorage {
             } else {
                 success = completeEdit(this, true);
             }
-            committed = true;
+
             return success;
         }
         public void abort() throws IOException {
+            finish = true;
             completeEdit(this, false);
         }
 
@@ -657,7 +696,15 @@ class FlexibleDiskStorageImpl implements IStreamStorage {
         }
 
         public void close(){
-
+            if(!finish){
+                try {
+                    abort();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }finally {
+                    finish = true;
+                }
+            }
         }
 
         @Override

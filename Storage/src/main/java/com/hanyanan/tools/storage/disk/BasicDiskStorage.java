@@ -5,8 +5,6 @@ import android.graphics.Bitmap;
 import com.hanyanan.tools.storage.Error.BusyInUsingError;
 import com.hanyanan.tools.storage.Utils;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -21,6 +19,7 @@ import java.io.Serializable;
  */
 class BasicDiskStorage implements DiskStorage{
     protected final static int VERSION = 1;
+    
 
     private final IStreamStorage mStreamStorage;
     BasicDiskStorage(IStreamStorage streamStorage){
@@ -59,23 +58,33 @@ class BasicDiskStorage implements DiskStorage{
         throw new UnsupportedOperationException("Unsupported get operation.");
     }
 
+    /**
+     * User must close it.
+     * @param key key
+     * @return
+     */
     @Override
     public InputStream getInputStream(String key) {
         try {
             IStreamStorage.Snapshot snapShot = mStreamStorage.get(key);
             if(null == snapShot) return null;
-            return new SafeInputStream(snapShot, snapShot.getInputStream());
+            return new InputStreamWrapper(snapShot, snapShot.getInputStream());
         } catch (IOException e) {
             return null;
         }
     }
 
+    /**
+     * User must close it.
+     * @param key
+     * @return
+     */
     @Override
     public OutputStream getOutputStream(String key) {
         try {
             IStreamStorage.Editor editor = mStreamStorage.edit(key);
             if(null == editor) return null;
-            return new SafeOutputStream(editor,editor.newOutputStream());
+            return new OutputStreamWrapper(editor,editor.newOutputStream());
         } catch (IOException e) {
             e.printStackTrace();
             return null;
@@ -87,30 +96,38 @@ class BasicDiskStorage implements DiskStorage{
 
     @Override
     public boolean save(String key, InputStream inputStream) throws IOException {
-        return save(key, inputStream, Long.MAX_VALUE);
+        return save(key, inputStream, DEFAULT_COPIER, REST_STREAM_SIZE, VALID_FOREVER);
     }
 
     @Override
-    public boolean save(String key, InputStream inputStream, long expireTime) throws IOException {
+    public boolean save(String key, InputStream inputStream, Copier copier, long size, long expireTime) throws IOException {
+        if(null == copier) throw new NullPointerException("");
         if(null == inputStream) return false;
         IStreamStorage.Editor editor = null;
         try {
             editor = mStreamStorage.edit(key);
         } catch (BusyInUsingError busyInUsingError) {
             busyInUsingError.printStackTrace();
+            if(null != editor) editor.abort();
             return false;
         }
         if(null == editor) return false;
         OutputStream outputStream = editor.newOutputStream();
         if(null == outputStream){
+            editor.abort();
             editor.close();
             return false;
         }
-        Utils.copy(inputStream, outputStream);
+        copier.copy(inputStream, outputStream, size);
         outputStream.close();
         editor.setExpireTime(expireTime);
         editor.commit();
         return true;
+    }
+
+    @Override
+    public boolean save(String key, InputStream inputStream, long expireTime) throws IOException {
+        return save(key, inputStream, DEFAULT_COPIER, REST_STREAM_SIZE, expireTime);
     }
 
     @Override
@@ -147,7 +164,7 @@ class BasicDiskStorage implements DiskStorage{
 
     @Override
     public <T extends Serializable> boolean saveObject(String key, T serializable) throws IOException {
-        return false;
+        return saveObject(key, serializable, VALID_FOREVER);
     }
 
     @Override
@@ -168,6 +185,7 @@ class BasicDiskStorage implements DiskStorage{
             return editor.commit();
         } catch (BusyInUsingError busyInUsingError) {
             busyInUsingError.printStackTrace();
+            editor.abort();
             return false;
         }finally {
             if(null != editor) editor.close();
@@ -175,7 +193,7 @@ class BasicDiskStorage implements DiskStorage{
     }
 
     @Override
-    public <T extends Serializable> T getObject(String key, T clazz) throws IOException{
+    public <T extends Serializable> T getObject(String key, Class<T> clazz) throws IOException{
         InputStream inputStream = null;
         try {
             inputStream = getInputStream(key);

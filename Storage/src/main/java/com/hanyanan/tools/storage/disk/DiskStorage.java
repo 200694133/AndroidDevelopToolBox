@@ -14,6 +14,10 @@ import java.io.Serializable;
  * for user to implement it.
  */
 public interface DiskStorage {
+    public static final long VALID_FOREVER = -1;
+    public static final int REST_STREAM_SIZE = Integer.MAX_VALUE;
+    public static final Copier DEFAULT_COPIER = new DefaultCopier();
+
     /**
      * return root directory fot this storage module.
      * @return root directory
@@ -28,10 +32,12 @@ public interface DiskStorage {
 
     /**
      * return clean file of key. In fact it's not recommend use this method to get the expected file.
+     * In fact this function is not recommend, it's unsafe, please use getInputStream instead.
      * @see #getInputStream(String).
      * @param key key
      * @return file of key, null means that missing the key
      */
+    @Deprecated
     File get(String key);
 
     /**
@@ -60,6 +66,19 @@ public interface DiskStorage {
      * @throws IOException
      */
     boolean save(String key, InputStream inputStream) throws IOException;
+
+    /**
+     * Save the current input stream to storage. But notice that it's unsafe, it storage content
+     * without encoding. It's valid before expire time. It must be provide a interface to do the
+     * hard work.
+     * @param key key
+     * @param inputStream the input stream need read and write to storage.
+     * @param expireTime expire time for current entry.
+     * @param copier the copier to copy data from input stream to output stream..
+     * @return true means success, or other wise means failed.
+     * @throws IOException
+     */
+    boolean save(String key, InputStream inputStream, Copier copier, long size, long expireTime) throws IOException;
 
     /**
      * Save the current input stream to storage. But notice that it's unsafe, it storage content
@@ -117,7 +136,7 @@ public interface DiskStorage {
     <T extends Serializable> boolean saveObject(String key, T serializable, long expireTime) throws IOException;
 
 
-    <T extends Serializable> T getObject(String key, T clazz)throws IOException;
+    <T extends Serializable> T getObject(String key, Class<T> clazz)throws IOException;
     /**
      * Removes file associated with incoming Key
      * @param key key to remove
@@ -133,9 +152,17 @@ public interface DiskStorage {
      */
     boolean contains(String key);
 
-    /** Closes disk storage, releases resources. */
+    /** Closes disk storage, releases all resources. */
     void close();
 
     /** Clears disk Storage. */
     void clear() throws IOException;
+
+    /**
+     * Copy content from input stream to output stream.
+     * The main propose for this interface is to encrypt the content or decrypt from disk .
+     */
+    public static interface Copier{
+        public void copy(InputStream inputStream, OutputStream outputStream, long length)throws IOException;
+    }
 }

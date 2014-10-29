@@ -55,11 +55,13 @@ class FixSizeDiskStorageImpl extends FlexibleDiskStorageImpl {
         FixSizeDiskStorageImpl cache = new FixSizeDiskStorageImpl(directory, appVersion, size);
         if (cache.journalFile.exists()) {
             try {
-                cache.readJournal();
-                cache.processJournal();
                 cache.journalWriter = new BufferedWriter(
                         new OutputStreamWriter(new FileOutputStream(cache.journalFile, true),
                                 Utils.ASCII_CHARSET));
+
+                cache.readJournal();
+                cache.processJournal();
+
                 cache.trimToSizeIfNeed();
                 return cache;
             } catch (IOException journalIsCorrupt) {

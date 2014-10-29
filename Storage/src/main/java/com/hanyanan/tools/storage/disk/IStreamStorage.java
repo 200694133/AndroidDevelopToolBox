@@ -29,6 +29,7 @@ interface IStreamStorage {
     public File getRootFile();
 
     public boolean contain(String key);
+
     public static final OutputStream NULL_OUTPUT_STREAM = new OutputStream() {
         @Override
         public void write(int b) throws IOException {
