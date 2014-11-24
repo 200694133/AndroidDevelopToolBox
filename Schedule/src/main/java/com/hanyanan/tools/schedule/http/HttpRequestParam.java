@@ -55,7 +55,13 @@ public class HttpRequestParam implements RequestParam{
         mMethod = method;
         return this;
     }
-
+    private boolean isCacheCookie;
+    public void setCacheCookie(boolean b){
+        isCacheCookie = b;
+    }
+    public boolean cacheCookie(){
+        return isCacheCookie;
+    }
     public HttpRequestParam putUrlParam(String key, String value){
         mUrlParams.put(key, value);
         return this;

@@ -16,13 +16,13 @@ import java.io.UnsupportedEncodingException;
 /**
  * Created by hanyanan on 2014/7/30.
  */
-public class JsonArrayRequestExecutor implements RequestExecutor<JSONArray, NetworkRequest> {
+public class JsonArrayRequestExecutor implements RequestExecutor<JSONArray, HttpRequest> {
     private final HttpInterface mNetwork;
     public JsonArrayRequestExecutor(HttpInterface network){
         mNetwork = network;
     }
     @Override
-    public Response<JSONArray> performRequest(NetworkRequest request) throws XError {
+    public Response<JSONArray> performRequest(HttpRequest request) throws XError {
         HttpRequestParam param = request.getRequestParam();
         param.setTransactionType(HttpRequestParam.TransactionType.JASON);
 

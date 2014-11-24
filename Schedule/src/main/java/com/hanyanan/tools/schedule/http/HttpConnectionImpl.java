@@ -1,6 +1,7 @@
 package com.hanyanan.tools.schedule.http;
 
 import android.text.TextUtils;
+import android.webkit.CookieManager;
 
 import com.hanyanan.tools.schedule.XError;
 
@@ -87,7 +88,7 @@ public class HttpConnectionImpl implements HttpInterface{
     private static final String LINE_END = "\r\n";
     private static final String CONTENT_TYPE = "multipart/form-data"; // 内容类型
 
-    public static BasicHttpResponse performFullRequest(NetworkRequest request,HttpRequestParam param) throws IOException {
+    public static BasicHttpResponse performFullRequest(HttpRequest request,HttpRequestParam param) throws IOException {
         if(param.getMethod() == HttpRequestParam.Method.POST && param.getUploadWrappers() !=null){
             return performMultiPartRequest(request,param);
         }else{
@@ -95,7 +96,7 @@ public class HttpConnectionImpl implements HttpInterface{
         }
     }
     //multipart 用于post模式下上传文件用的
-    public static BasicHttpResponse performMultiPartRequest(NetworkRequest request,HttpRequestParam param) throws IOException {
+    public static BasicHttpResponse performMultiPartRequest(HttpRequest request,HttpRequestParam param) throws IOException {
         String urlPath = param.getUrl();
         {//在get模式下，封装参数到url
             if (param.getMethod() == HttpRequestParam.Method.GET && param.getUrlPramsMaps() != null) {
@@ -121,7 +122,7 @@ public class HttpConnectionImpl implements HttpInterface{
         parseHead(httpURLConnection, param);//set request method
         httpURLConnection.setDoInput(true);
         httpURLConnection.setDoOutput(true);
-        packageHttpHeader(httpURLConnection, param.getHttpHeader());//set/add request property
+
         httpURLConnection.setRequestProperty("Content-type", CONTENT_TYPE + ";boundary=" + BOUNDARY);
         httpURLConnection.setRequestProperty("Connection", "close");
         httpURLConnection.setInstanceFollowRedirects(true);
@@ -131,6 +132,7 @@ public class HttpConnectionImpl implements HttpInterface{
         if (null != param.getDownLoadContentRangeWrapper()) {
             httpURLConnection.setRequestProperty("Range", "bytes=" + param.getDownLoadContentRangeWrapper().offset + "-" + (param.getDownLoadContentRangeWrapper().offset + param.getDownLoadContentRangeWrapper().length));
         }
+        packageHttpHeader(httpURLConnection, param.getHttpHeader());//set/add request property
 
         DataOutputStream dos = new DataOutputStream(httpURLConnection.getOutputStream());
         {//write http url param
@@ -164,7 +166,7 @@ public class HttpConnectionImpl implements HttpInterface{
 
         {//check response
             int responseCode = httpURLConnection.getResponseCode();
-            if (responseCode >= 300 || responseCode < 200) {
+            if ((responseCode >= 300&&responseCode!=304) || responseCode < 200) {
                 return null;
             }
         }
@@ -176,11 +178,18 @@ public class HttpConnectionImpl implements HttpInterface{
         entity.setContentEncoding(httpURLConnection.getContentEncoding());
         entity.setContentType(httpURLConnection.getContentType());
         httpResponse.setEntity(entity);
+
+
+//        if(param.cacheCookie()){
+//            Header h1 = httpResponse.getFirstHeader("Set-Cookie");
+//            CookieManager cm = CookieManager.getInstance();
+//            cm.setCookie(param.getUrl(), h1.getValue());
+//        }
         return httpResponse;
     }
 
 
-    public static BasicHttpResponse performSimpleRequest(NetworkRequest request,HttpRequestParam param) throws IOException {
+    public static BasicHttpResponse performSimpleRequest(HttpRequest request,HttpRequestParam param) throws IOException {
         String urlPath = param.getUrl();
         {//在get模式下，封装参数到url
             if (param.getMethod() == HttpRequestParam.Method.GET && param.getUrlPramsMaps() != null && param.getUrlPramsMaps().size()>0) {
@@ -210,9 +219,12 @@ public class HttpConnectionImpl implements HttpInterface{
             httpURLConnection.setDoOutput(true);
         }
         httpURLConnection.setDoInput(true);
-        packageHttpHeader(httpURLConnection, param.getHttpHeader());//set/add request property
-        httpURLConnection.setRequestProperty("Content-type", "application/x-www-form-urlencoded;charset=utf-8");
+
+        httpURLConnection.setRequestProperty("Content-Type", "application/x-www-form-urlencoded;charset=utf-8");
         httpURLConnection.setRequestProperty("Connection", "close");
+//        if(!param.useCache()){
+//            httpURLConnection.setRequestProperty("Cache-Control", "no-cache");
+//        }
         httpURLConnection.setInstanceFollowRedirects(true);
         httpURLConnection.setUseCaches(param.useCache());
         httpURLConnection.setConnectTimeout(param.getConnectTimeOut());
@@ -220,25 +232,26 @@ public class HttpConnectionImpl implements HttpInterface{
         if (null != param.getDownLoadContentRangeWrapper()) {
             httpURLConnection.setRequestProperty("Range", "bytes=" + param.getDownLoadContentRangeWrapper().offset + "-" + (param.getDownLoadContentRangeWrapper().offset + param.getDownLoadContentRangeWrapper().length));
         }
-
+        packageHttpHeader(httpURLConnection, param.getHttpHeader());//set/add request property
         if(param.getMethod() == HttpRequestParam.Method.POST){
-            DataOutputStream dos = new DataOutputStream(httpURLConnection.getOutputStream());
             {//write http url param
+                String p = "";
                 if (param.getUrlPramsMaps() != null && param.getUrlPramsMaps().size() > 0) {
                     HashMap<String, String> params = param.getUrlPramsMaps();
                     String s = HttpUtils.encodeParam(params);
-                    dos.write(s.getBytes());
+                    byte[] data =s.getBytes();
+                    httpURLConnection.setRequestProperty("Content-Length", ""+data.length);
+                    DataOutputStream dos = new DataOutputStream(httpURLConnection.getOutputStream());
+                    dos.write(data);
+                    dos.flush();
+                    dos.close();
                 }
             }
-//            byte[] end_data = ( LINE_END).getBytes();
-//            dos.write(end_data);
-            dos.flush();
-            dos.close();
         }
 
         {//check response
             int responseCode = httpURLConnection.getResponseCode();
-            if (responseCode >= 300 || responseCode < 200) {
+            if ((responseCode >= 300&&responseCode!=304) || responseCode < 200) {
                 return null;
             }
         }
@@ -250,6 +263,20 @@ public class HttpConnectionImpl implements HttpInterface{
         entity.setContentEncoding(httpURLConnection.getContentEncoding());
         entity.setContentType(httpURLConnection.getContentType());
         httpResponse.setEntity(entity);
+
+        if(param.cacheCookie()){
+            Header hs[] = httpResponse.getHeaders("Set-Cookie");
+            String res = "";
+            for(Header header : hs){
+                res = header.getValue()+";"+res;
+            }
+            if(!TextUtils.isEmpty(res)) {
+                CookieManager cm = CookieManager.getInstance();
+                cm.setCookie(param.getUrl(), res);
+            }
+        }
+
+
         return httpResponse;
     }
 //    public static HttpResponseWrapper performUploadRequest(HttpURLConnection connection, HttpRequestParam param) throws IOException {
@@ -442,12 +469,12 @@ public class HttpConnectionImpl implements HttpInterface{
 //    }
 
     @Override
-    public BasicHttpResponse performUpLoadRequest(NetworkRequest httpRequest) throws IOException {
+    public BasicHttpResponse performUpLoadRequest(HttpRequest httpRequest) throws IOException {
         HttpRequestParam httpRequestParam = httpRequest.getRequestParam();
         return performFullRequest(httpRequest, httpRequestParam);
     }
     @Override
-    public BasicHttpResponse performSimpleRequest(NetworkRequest httpRequest) throws IOException, ServerError {
+    public BasicHttpResponse performSimpleRequest(HttpRequest httpRequest) throws IOException, ServerError {
         HttpRequestParam httpRequestParam = httpRequest.getRequestParam();
         return performFullRequest(httpRequest, httpRequestParam);
 //        HttpResponseWrapper httpResponseWrapper = performDownLoadRequest(httpRequest);
@@ -462,7 +489,7 @@ public class HttpConnectionImpl implements HttpInterface{
     }
 
     @Override
-    public BasicHttpResponse performDownLoadRequest(NetworkRequest httpRequest) throws IOException {
+    public BasicHttpResponse performDownLoadRequest(HttpRequest httpRequest) throws IOException {
         HttpRequestParam httpRequestParam = httpRequest.getRequestParam();
         return performFullRequest(httpRequest, httpRequestParam);
 //        HttpRequestParam httpRequestParam = httpRequest.getRequestParam();
@@ -495,7 +522,7 @@ public class HttpConnectionImpl implements HttpInterface{
     private static void packageHttpHeader(HttpURLConnection httpURLConnection, HashMap<String,String> headers){
         if(null == headers) return;
         for (String headerName : headers.keySet()) {
-            httpURLConnection.addRequestProperty(headerName, headers.get(headerName));
+            httpURLConnection.setRequestProperty(headerName, headers.get(headerName));
         }
     }
 

@@ -46,7 +46,7 @@ public abstract class Request<P extends RequestParam> implements Comparable<Requ
     protected long mRequestBirthTime = 0;
     private Status mStatus = Status.IDLE;
     /** Current request executor. #{@see RequestExecutor.performRequest}. */
-    protected final RequestExecutor mRequestExecutor;
+    protected RequestExecutor mRequestExecutor;
     /** retry policy used to retry current request when request failed occurred. */
     protected final RetryPolicy mRetryPolicy;
     /** used to delivery response. */
@@ -58,7 +58,7 @@ public abstract class Request<P extends RequestParam> implements Comparable<Requ
     protected Priority mPriority = Priority.NORMAL;
 
     /** The cache policy of this request to indicate if need cache the terminal response. */
-    protected CachePolicy mCachePolicy;
+    protected CachePolicy mCacheExecutor;
     /**  Bind a request queue. */
     protected final RequestQueue mRequestQueue;
 
@@ -90,6 +90,10 @@ public abstract class Request<P extends RequestParam> implements Comparable<Requ
         setRequestParam(param);
         setListener(requestQueue.getDefaultResponseListener());
         setStatus(Status.Pending);
+    }
+
+    public final void setRequestExecutor(RequestExecutor requestExecutor){
+        mRequestExecutor = requestExecutor;
     }
 
     public final RequestExecutor getRequestExecutor(){
@@ -147,16 +151,19 @@ public abstract class Request<P extends RequestParam> implements Comparable<Requ
      * Setup this request to reuse this request.
      */
     public void reset(){
-        //TODO
+        isCanceled = false;
+        mResponseDelivered = false;
+        mRequestBirthTime = System.currentTimeMillis();
+        mStatus = Status.IDLE;
     }
 
-    public Request setCachePolicy(CachePolicy cachePolicy){
-        mCachePolicy = cachePolicy;
+    public Request setCachePolicy(CachePolicy cacheExecutor){
+        mCacheExecutor = cacheExecutor;
         return this;
     }
 
     public CachePolicy getCachePolicy(){
-        return mCachePolicy;
+        return mCacheExecutor;
     }
     /**
      * Set a tag on this request. Can be used to cancel all requests with this

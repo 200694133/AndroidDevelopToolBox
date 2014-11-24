@@ -165,4 +165,8 @@ public interface DiskStorage {
     public static interface Copier{
         public void copy(InputStream inputStream, OutputStream outputStream, long length)throws IOException;
     }
+
+    public static interface OverFlowRemoveListener {
+        public void remove(String key, long expireTime, long size);
+    }
 }

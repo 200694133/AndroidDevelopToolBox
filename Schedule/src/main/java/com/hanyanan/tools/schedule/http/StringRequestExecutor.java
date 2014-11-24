@@ -4,23 +4,21 @@ import com.hanyanan.tools.schedule.RequestExecutor;
 import com.hanyanan.tools.schedule.Response;
 import com.hanyanan.tools.schedule.XError;
 
-import org.apache.http.message.BasicHttpResponse;
 import org.apache.http.protocol.HTTP;
 
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.util.Map;
 
 /**
  * Created by hanyanan on 2014/7/30.
  */
-public class StringRequestExecutor implements RequestExecutor<String, NetworkRequest> {
+public class StringRequestExecutor implements RequestExecutor<String, HttpRequest> {
     private final HttpInterface mHttpInterface;
     public StringRequestExecutor(HttpInterface network){
         mHttpInterface = network;
     }
     @Override
-    public Response<String> performRequest(NetworkRequest request) throws XError {
+    public Response<String> performRequest(HttpRequest request) throws XError {
         try {
             return Response.success(HttpUtils.doStringRequest(mHttpInterface,request));
         } catch (IOException e) {

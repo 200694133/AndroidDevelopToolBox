@@ -62,6 +62,10 @@ class FlexibleDiskStorageImpl implements IStreamStorage {
     protected final Authority mAuthority;
     protected int redundantOpCount;
     protected long mCurrentSize = 0;
+    protected DiskStorage.OverFlowRemoveListener mOverFlowRemoveListener;
+    public void setOverFlowRemoveListener(DiskStorage.OverFlowRemoveListener overFlowRemoveListener){
+        this.mOverFlowRemoveListener = overFlowRemoveListener;
+    }
 
     public long getCurrentSize(){
         return mCurrentSize;

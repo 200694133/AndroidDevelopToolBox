@@ -21,6 +21,7 @@ public class OutputStreamWrapper extends OutputStream implements Abortable{
     public void close() throws java.io.IOException {
         mEditor.commit();
         mOutputStream.close();
+        mEditor.close();
     }
 
     public void flush() throws java.io.IOException {

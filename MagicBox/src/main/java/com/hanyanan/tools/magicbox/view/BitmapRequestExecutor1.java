@@ -12,8 +12,6 @@ import com.hanyanan.tools.schedule.http.HttpConnectionImpl;
 import com.hanyanan.tools.schedule.http.HttpInterface;
 import com.hanyanan.tools.schedule.http.HttpRequest;
 import com.hanyanan.tools.schedule.http.NetworkError;
-import com.hanyanan.tools.schedule.http.cache.CacheableHttpConnectionImpl;
-import com.hanyanan.tools.schedule.http.cache.HttpCache;
 import com.hanyanan.tools.storage.disk.DiskStorage;
 
 import org.apache.http.message.BasicHttpResponse;
@@ -24,7 +22,7 @@ import java.io.InputStream;
 /**
  * Created by hanyanan on 2014/8/13.
  */
-public class BitmapRequestExecutor implements RequestExecutor<Bitmap,ImageRequest> {
+public class BitmapRequestExecutor1 implements RequestExecutor<Bitmap,ImageRequest> {
     private static final String TAG = "BitmapExecutor";
     private static Response downLoad(HttpInterface httpExecutor,DiskStorage fixSizeDiskStorage,HttpRequest request) throws NetworkError {
         try {
@@ -66,7 +64,6 @@ public class BitmapRequestExecutor implements RequestExecutor<Bitmap,ImageReques
         return new Size((int)(r*actualWidth),(int)(r*actualHeight));
     }
 
-    @Deprecated
     private Bitmap parseBitmap(DiskStorage cache, String key, int maxWidth, int maxHeight) throws IOException {
         InputStream inputStream = cache.getInputStream(key);
         if(null == inputStream) return null;
@@ -111,71 +108,29 @@ public class BitmapRequestExecutor implements RequestExecutor<Bitmap,ImageReques
     }
 
 
-    private Bitmap parseBitmap(HttpCache cache, HttpRequest httpRequest, int maxWidth, int maxHeight) throws IOException {
-        String key = httpRequest.getKey();
-        InputStream inputStream = cache.getContentInputStream(httpRequest);
-        if(null == inputStream) return null;
-        Bitmap.Config config = Bitmap.Config.RGB_565;
-        BitmapFactory.Options decodeOptions = new BitmapFactory.Options();
-        if (maxWidth == 0 && maxHeight == 0) {
-            decodeOptions.inPreferredConfig = config;
-            Bitmap bitmap = BitmapFactory.decodeStream(inputStream,null,decodeOptions);
-            int w = bitmap.getWidth();
-            int h = bitmap.getHeight();
-            inputStream.close();
-            return bitmap;
-        }
-        inputStream = cache.getContentInputStream(httpRequest);
-        if(null == inputStream) return null;
-        Bitmap bitmap = null;
-        decodeOptions.inJustDecodeBounds = true;
-        BitmapFactory.decodeStream(inputStream, null, decodeOptions);
-        inputStream.close();
-        int actualWidth = decodeOptions.outWidth;
-        int actualHeight = decodeOptions.outHeight;
-        Size size = calculateDesiredSize(maxWidth, maxHeight, actualWidth, actualHeight);
-        int desiredWidth = size.mWidth;
-        int desiredHeight = size.mHeight;
-        // Decode to the nearest power of two scaling factor.
-        decodeOptions.inJustDecodeBounds = false;
-        decodeOptions.inSampleSize =
-                findBestSampleSize(actualWidth, actualHeight, desiredWidth, desiredHeight);
-        inputStream = cache.getContentInputStream(httpRequest);
-        if(null == inputStream) return null;
-        Bitmap tempBitmap =
-                BitmapFactory.decodeStream(inputStream,null,decodeOptions);
-        inputStream.close();
-        // If necessary, scale down to the maximal acceptable size.
-        if (tempBitmap != null && (tempBitmap.getWidth() > desiredWidth ||
-                tempBitmap.getHeight() > desiredHeight)) {
-            bitmap = Bitmap.createScaledBitmap(tempBitmap,
-                    desiredWidth, desiredHeight, true);
-            tempBitmap.recycle();
-        } else {
-            bitmap = tempBitmap;
-        }
-        return bitmap;
-    }
 
     @Override
     public Response<Bitmap> performRequest(ImageRequest request) throws XError {
-        HttpCache cache = request.getHttpCache();
-        Bitmap bitmap = null;
-
-        try {
-            CacheableHttpConnectionImpl httpConnection = new CacheableHttpConnectionImpl();
-            BasicHttpResponse basicHttpResponse = httpConnection.performDownLoadRequest(request);
-            if(null != basicHttpResponse && basicHttpResponse.getEntity()!=null && basicHttpResponse.getEntity().getContent()!=null){
-                basicHttpResponse.getEntity().consumeContent();
-            }
-            bitmap = parseBitmap(cache, request,request.getMaxWidth(),request.getMaxHeight());
-        } catch (IOException e) {
-            e.printStackTrace();
-            return null;
-        }
-
-        if(null != bitmap) return Response.success(bitmap);
-        return Response.error(new XError(new FaultError("Decode failed")));
+        return null;
+//        DiskStorage cache = request.getFixSizeDiskStorage();
+//        String key = request.getKey();
+//        Bitmap bitmap = null;
+//        try {
+//            if(!cache.contains(key)){
+//                downLoad(new HttpConnectionImpl(), request.getFixSizeDiskStorage(), request);
+//            }
+//
+//            bitmap = parseBitmap(cache, request.getKey(),request.getMaxWidth(),request.getMaxHeight());
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//            return null;
+//        } catch (NetworkError networkError) {
+//            networkError.printStackTrace();
+//            throw new XError(networkError);
+//        }
+//
+//        if(null != bitmap) return Response.success(bitmap);
+//        return Response.error(new XError(new FaultError("Decode failed")));
     }
     /**
      * Returns the largest power-of-two divisor for use in downscaling a bitmap

@@ -2,19 +2,18 @@ package com.hanyanan.tools.magicbox.view;
 
 import android.graphics.Bitmap;
 import com.hanyanan.tools.magicbox.MagicApplication;
+import com.hanyanan.tools.schedule.Cache;
 import com.hanyanan.tools.schedule.RequestQueue;
 import com.hanyanan.tools.schedule.Response;
 import com.hanyanan.tools.schedule.ResponseDelivery;
+import com.hanyanan.tools.schedule.http.HttpRequest;
 import com.hanyanan.tools.schedule.http.HttpRequestParam;
-import com.hanyanan.tools.schedule.http.NetworkRequest;
 import com.hanyanan.tools.storage.disk.DiskStorage;
-
-import java.util.HashMap;
 
 /**
  * Created by hanyanan on 2014/8/13.
  */
-class ImageRequest extends NetworkRequest {
+class ImageRequest extends HttpRequest {
     private static final BitmapRequestExecutor S_BITMAP_REQUEST_EXECUTOR = new BitmapRequestExecutor();
     private int mMaxWidth, mMaxHeight;
     private String mKey;
@@ -26,11 +25,6 @@ class ImageRequest extends NetworkRequest {
         mMaxHeight = height;
     }
 
-    public DiskStorage getFixSizeDiskStorage(){
-        MagicApplication mApp = MagicApplication.getInstance();
-        if(null == mApp) return null;
-        return mApp.getFixSizeDiskStorage();
-    }
     public int getMaxWidth(){
         return mMaxWidth;
     }
@@ -43,6 +37,7 @@ class ImageRequest extends NetworkRequest {
                         Response.Listener<Bitmap> listener) {
         super(requestQueue, S_BITMAP_REQUEST_EXECUTOR,parseHttpRequestParam(url));
         setListener(listener);
+        setCacheMode(Cache.Mode.SimpleMode);
     }
 
     public ImageRequest setKey(String key){

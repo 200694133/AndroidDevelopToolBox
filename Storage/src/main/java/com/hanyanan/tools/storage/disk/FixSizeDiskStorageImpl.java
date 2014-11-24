@@ -22,6 +22,7 @@ class FixSizeDiskStorageImpl extends FlexibleDiskStorageImpl {
 
     final long mMaxSize;
     long mCurrSize = 0;
+
     private FixSizeDiskStorageImpl(File directory, int appVersion, long size) {
         super(directory, appVersion);
         mMaxSize = size;
@@ -30,6 +31,7 @@ class FixSizeDiskStorageImpl extends FlexibleDiskStorageImpl {
     private FixSizeDiskStorageImpl(File directory, int appVersion) {
         this(directory, appVersion, DEFAULT_MAX_SIZE);
     }
+
     /**
      * Opens the cache in {@code directory}, creating a cache if none exists
      * there.
@@ -124,6 +126,9 @@ class FixSizeDiskStorageImpl extends FlexibleDiskStorageImpl {
 
             try {
                 remove(e.getKey());
+                if(null != mOverFlowRemoveListener){
+                    mOverFlowRemoveListener.remove(e.getKey(), 0, e.getLength());
+                }
             } catch (IOException e1) {
                 e1.printStackTrace();
             }

@@ -22,6 +22,8 @@ interface IStreamStorage {
 
     public boolean remove(String key) throws IOException;
 
+    public void setOverFlowRemoveListener(DiskStorage.OverFlowRemoveListener overFlowRemoveListener);
+
     public void close() throws IOException;
 
     public long getCurrentSize();

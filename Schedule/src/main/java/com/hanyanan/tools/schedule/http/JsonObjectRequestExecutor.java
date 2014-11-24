@@ -15,13 +15,13 @@ import java.io.UnsupportedEncodingException;
 /**
  * Created by hanyanan on 2014/7/30.
  */
-public class JsonObjectRequestExecutor implements RequestExecutor<JSONObject, NetworkRequest> {
+public class JsonObjectRequestExecutor implements RequestExecutor<JSONObject, HttpRequest> {
     private final HttpInterface mNetwork;
     public JsonObjectRequestExecutor(HttpInterface network){
         mNetwork = network;
     }
     @Override
-    public Response<JSONObject> performRequest(NetworkRequest request) throws XError {
+    public Response<JSONObject> performRequest(HttpRequest request) throws XError {
         HttpRequestParam param = request.getRequestParam();
         param.setTransactionType(HttpRequestParam.TransactionType.JASON);
 

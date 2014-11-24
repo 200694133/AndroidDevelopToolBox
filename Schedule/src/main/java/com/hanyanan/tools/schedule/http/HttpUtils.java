@@ -16,7 +16,6 @@ import org.apache.http.protocol.HTTP;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
-import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.SocketTimeoutException;
 import java.net.URLEncoder;
@@ -29,8 +28,8 @@ import java.util.Map;
  * Created by Administrator on 2014/8/31.
  */
 public class HttpUtils {
-    public static String doStringRequest(HttpInterface httpInterface, NetworkRequest networkRequest)throws XError,IOException{
-        NetworkResponse networkResponse = doRequest(httpInterface,networkRequest);
+    public static String doStringRequest(HttpInterface httpInterface, HttpRequest httpRequest)throws XError,IOException{
+        NetworkResponse networkResponse = doRequest(httpInterface, httpRequest);
         if(null == networkResponse) return null;
         byte[] data = networkResponse.data;
         if(null == data || data.length <=0) return null;
@@ -42,13 +41,13 @@ public class HttpUtils {
         }
         return parsed;
     }
-    public static NetworkResponse doRequest(HttpInterface httpInterface, NetworkRequest networkRequest) throws XError,IOException {
+    public static NetworkResponse doRequest(HttpInterface httpInterface, HttpRequest httpRequest) throws XError,IOException {
         long requestStart = SystemClock.elapsedRealtime();
         HttpResponse httpResponse = null;
         byte[] responseContents = null;
         Map<String, String> responseHeaders = null;
         try {
-            httpResponse = httpInterface.performSimpleRequest(networkRequest);
+            httpResponse = httpInterface.performSimpleRequest(httpRequest);
             StatusLine statusLine = httpResponse.getStatusLine();
             int statusCode = statusLine.getStatusCode();
 
@@ -82,7 +81,7 @@ public class HttpUtils {
         } catch (ConnectTimeoutException e) {
             throw new XError(e);
         } catch (MalformedURLException e) {
-            throw new RuntimeException("Bad URL " + networkRequest.getRequestParam().getUrl(), e);
+            throw new RuntimeException("Bad URL " + httpRequest.getRequestParam().getUrl(), e);
         } catch (IOException e) {
             int statusCode = 0;
             NetworkResponse networkResponse = null;
@@ -91,14 +90,14 @@ public class HttpUtils {
             } else {
                 throw new XError(new NoConnectionError(e));
             }
-            XLog.e("Unexpected response code %d for %s", statusCode, networkRequest.getRequestParam().getUrl());
+            XLog.e("Unexpected response code %d for %s", statusCode, httpRequest.getRequestParam().getUrl());
             if (responseContents != null) {
                 networkResponse = new NetworkResponse(statusCode, responseContents, responseHeaders, false);
                 if (statusCode == HttpStatus.SC_UNAUTHORIZED ||
                         statusCode == HttpStatus.SC_FORBIDDEN) {
 //                        attemptRetryOnException("auth",
 //                                request, new AuthFailureError(networkResponse));
-                    throw new XError(new AuthFailureError("auth error " + networkRequest.getRequestParam().getUrl()));
+                    throw new XError(new AuthFailureError("auth error " + httpRequest.getRequestParam().getUrl()));
                 } else {
                     // TODO: Only throw ServerError for 5xx status codes.
                     throw new XError(new ServerError(networkResponse));

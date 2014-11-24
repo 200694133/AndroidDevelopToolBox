@@ -3,23 +3,17 @@ package com.hanyanan.tools.schedule.http;
 import android.text.TextUtils;
 
 import com.google.gson.Gson;
-import com.google.gson.reflect.TypeToken;
 import com.hanyanan.tools.schedule.RequestExecutor;
 import com.hanyanan.tools.schedule.Response;
 import com.hanyanan.tools.schedule.XError;
 
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
-
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
-import java.util.List;
 
 /**
  * Created by hanyanan on 2014/7/30.
  */
-public class GsonObjectRequestExecutor<T> implements RequestExecutor<T, NetworkRequest> {
+public class GsonObjectRequestExecutor<T> implements RequestExecutor<T, HttpRequest> {
     private final HttpInterface mNetwork;
     private final Class<T> clazz;
     public GsonObjectRequestExecutor(HttpInterface network, Class<T> clazz){
@@ -27,7 +21,7 @@ public class GsonObjectRequestExecutor<T> implements RequestExecutor<T, NetworkR
         mNetwork = network;
     }
     @Override
-    public Response<T> performRequest(NetworkRequest request) throws XError {
+    public Response<T> performRequest(HttpRequest request) throws XError {
         HttpRequestParam param = request.getRequestParam();
         param.setTransactionType(HttpRequestParam.TransactionType.JASON);
 

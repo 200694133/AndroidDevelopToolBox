@@ -4,21 +4,18 @@ import com.hanyanan.tools.schedule.RequestExecutor;
 import com.hanyanan.tools.schedule.Response;
 import com.hanyanan.tools.schedule.XError;
 
-import org.apache.http.protocol.HTTP;
-
 import java.io.IOException;
-import java.util.Map;
 
 /**
  * Created by hanyanan on 2014/7/30.
  */
-public class RawRequestExecutor implements RequestExecutor<byte[], NetworkRequest> {
+public class RawRequestExecutor implements RequestExecutor<byte[], HttpRequest> {
     private final HttpInterface mHttpInterface;
     public RawRequestExecutor(HttpInterface network){
         mHttpInterface = network;
     }
     @Override
-    public Response<byte[]> performRequest(NetworkRequest request) throws XError {
+    public Response<byte[]> performRequest(HttpRequest request) throws XError {
         try {
             NetworkResponse response = HttpUtils.doRequest(mHttpInterface,request);
             if(null == response) return Response.success(null);

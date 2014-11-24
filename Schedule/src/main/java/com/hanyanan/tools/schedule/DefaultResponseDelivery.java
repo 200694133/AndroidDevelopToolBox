@@ -51,6 +51,12 @@ public class DefaultResponseDelivery implements ResponseDelivery {
     }
 
     @Override
+    public void postRunnable(Request<?> request, Runnable response) {
+        request.addMarker("post-runnable");
+        mResponsePoster.execute(response);
+    }
+
+    @Override
     public void postResponse(Request<?> request, Response<?> response) {
         postResponse(request, response, null);
     }
@@ -98,12 +104,12 @@ public class DefaultResponseDelivery implements ResponseDelivery {
             if (mRequest.isCanceled()) {
                 mRequest.finish("canceled-at-delivery");
                 mRequest.deliverCanceled();
-            }else if (mResponse.isSuccess()) { // Deliver a normal response or error, depending.
+            }else if (mResponse!=null && mResponse.isSuccess()) { // Deliver a normal response or error, depending.
                 mRequest.finish("finished-at-success");
                 mRequest.deliverResponse(mResponse.result);
             } else {
                 mRequest.finish("finished-at-error");
-                mRequest.deliverError(mResponse.error);
+                mRequest.deliverError(null==mResponse?new XError(new NullPointerException("Result is Null")):mResponse.error);
             }
 //
 //            // If this is an intermediate response, add a marker, otherwise we're done

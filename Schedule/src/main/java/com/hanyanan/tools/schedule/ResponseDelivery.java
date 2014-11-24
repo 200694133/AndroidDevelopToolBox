@@ -5,6 +5,10 @@ package com.hanyanan.tools.schedule;
  */
 public interface ResponseDelivery {
     /**
+     * Parses a runnable from the request or cache and delivers it.
+     */
+    public void postRunnable(Request<?> request, Runnable response);
+    /**
      * Parses a response from the network or cache and delivers it.
      */
     public void postResponse(Request<?> request, Response<?> response);

@@ -12,7 +12,7 @@ import com.hanyanan.tools.schedule.RequestQueue;
 import com.hanyanan.tools.schedule.Response;
 import com.hanyanan.tools.schedule.XError;
 import com.hanyanan.tools.schedule.http.HttpExecutor;
-import com.hanyanan.tools.schedule.http.NetworkRequest;
+import com.hanyanan.tools.schedule.http.HttpRequest;
 import com.hanyanan.tools.storage.disk.DiskStorage;
 import com.hanyanan.tools.storage.disk.LimitedSizeDiskStorage;
 import java.io.File;
@@ -107,7 +107,7 @@ public class TestDiskCacheThread extends Thread{
         }
     }
 
-    public static class DownloadRequest extends NetworkRequest{
+    public static class DownloadRequest extends HttpRequest {
         private final DiskStorage mFixSizeDiskStorage;
         private final String mKey;
 

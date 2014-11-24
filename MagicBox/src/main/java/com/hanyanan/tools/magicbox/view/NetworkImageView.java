@@ -13,6 +13,7 @@ import android.widget.ImageView;
 import com.hanyanan.tools.magicbox.MagicApplication;
 import com.hanyanan.tools.magicbox.MagicUtils;
 import com.hanyanan.tools.magicbox.R;
+import com.hanyanan.tools.schedule.Cache;
 import com.hanyanan.tools.schedule.DefaultResponseDelivery;
 import com.hanyanan.tools.schedule.Request;
 import com.hanyanan.tools.schedule.RequestQueue;
@@ -69,11 +70,18 @@ public class NetworkImageView extends ImageView implements Response.Listener<Bit
     public void setUrl(String url){
         setUrl(url,null,null);
     }
-
+    public void setUrl(String url, boolean refresh){
+        setUrl(url,null,null, refresh?Cache.Mode.Refresh:Cache.Mode.SimpleMode);
+    }
     public void setUrl(String url,HashMap<String,String> property,String key){
+        setUrl(url,property,key,Cache.Mode.SimpleMode);
+    }
+
+    public void setUrl(String url,HashMap<String,String> property,String key, Cache.Mode mode){
         MagicUtils.checkThreadState();
-        if(mUrl == url) return ;
-        if(!TextUtils.isEmpty(mUrl) && mUrl.equals(url)) return ;
+
+//        if(mUrl == url) return ;
+//        if(!TextUtils.isEmpty(mUrl) && mUrl.equals(url)) return ;
 
         if (mImageRequest != null) {
             mImageRequest.cancel();
@@ -81,6 +89,10 @@ public class NetworkImageView extends ImageView implements Response.Listener<Bit
         mImageRequest = null;
 //        setImageBitmap(null);
         mUrl = url;
+        if(TextUtils.isEmpty(url)){
+            this.setImageResource(R.drawable.ic_launcher);
+            return ;
+        }
 
         MagicApplication mApp = MagicApplication.getInstance();
         if(null == mApp) return ;
@@ -93,6 +105,8 @@ public class NetworkImageView extends ImageView implements Response.Listener<Bit
 
         mImageRequest = new ImageRequest(MagicApplication.getInstance().getRequestQueue(),
                 mUrl,new DefaultResponseDelivery(new Handler(Looper.getMainLooper())),this );
+        mImageRequest.setCacheMode(mode);
+        mImageRequest.setHttpCache(MagicApplication.getInstance().getHttpCache());
         mImageRequest.setKey(key);
         if(null != property) mImageRequest.getRequestParam().setHeaderProperty(property);
         loadImageIfNecessary();

@@ -23,38 +23,49 @@ import java.util.Map;
  * An interface for a cache keyed by a String with a byte array as data.
  */
 public interface Cache {
-    /**
-     * Retrieves an entry from the cache.
-     * @param key Cache key
-     * @return An {@link Entry} or null in the event of a cache miss
-     */
-    public Entry get(String key);
+    public enum Mode{
+        /** 不进行任何缓存 */
+        Disable,
+        /** strict mode to check expiry date. */
+        StrictMode,
+        /** ignore expiry date */
+        SimpleMode,
+        /** refresh every time. */
+        Refresh;
+    }
 
-    /**
-     * Adds or replaces an entry to the cache.
-     * @param key Cache key
-     * @param entry Data to store and metadata for cache coherency, TTL, etc.
-     */
-    public void put(String key, Entry entry);
-
-    /**
-     * Performs any potentially long-running actions needed to initialize the cache;
-     * will be called from a worker thread.
-     */
-    public void initialize();
-
-    /**
-     * Invalidates an entry in the cache.
-     * @param key Cache key
-     * @param fullExpire True to fully expire the entry, false to soft expire
-     */
-    public void invalidate(String key, boolean fullExpire);
-
-    /**
-     * Removes an entry from the cache.
-     * @param key Cache key
-     */
-    public void remove(String key);
+//    /**
+//     * Retrieves an entry from the cache.
+//     * @param key Cache key
+//     * @return An {@link Entry} or null in the event of a cache miss
+//     */
+//    public Entry get(String key);
+//
+//    /**
+//     * Adds or replaces an entry to the cache.
+//     * @param key Cache key
+//     * @param entry Data to store and metadata for cache coherency, TTL, etc.
+//     */
+//    public void put(String key, Entry entry);
+//
+//    /**
+//     * Performs any potentially long-running actions needed to initialize the cache;
+//     * will be called from a worker thread.
+//     */
+//    public void initialize();
+//
+//    /**
+//     * Invalidates an entry in the cache.
+//     * @param key Cache key
+//     * @param fullExpire True to fully expire the entry, false to soft expire
+//     */
+//    public void invalidate(String key, boolean fullExpire);
+//
+//    /**
+//     * Removes an entry from the cache.
+//     * @param key Cache key
+//     */
+//    public void remove(String key);
 
     /**
      * Empties the cache.
@@ -65,8 +76,8 @@ public interface Cache {
      * Data and metadata for an entry returned by the cache.
      */
     public static class Entry {
-        /** The data returned from cache. */
-        public byte[] data;
+//        /** The data returned from cache. */
+//        public byte[] data;
 
         /** ETag for cache coherency. */
         public String eTag;

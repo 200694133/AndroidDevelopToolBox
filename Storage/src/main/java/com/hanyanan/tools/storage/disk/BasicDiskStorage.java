@@ -47,6 +47,10 @@ class BasicDiskStorage implements DiskStorage{
         return mStreamStorage.getRootFile();
     }
 
+    public void setOverFlowRemoveListener(DiskStorage.OverFlowRemoveListener overFlowRemoveListener){
+        mStreamStorage.setOverFlowRemoveListener(overFlowRemoveListener);
+    }
+
     @Override
     public long getCurrentSize() {
         if(null == mStreamStorage) return -1;
@@ -84,7 +88,13 @@ class BasicDiskStorage implements DiskStorage{
         try {
             IStreamStorage.Editor editor = mStreamStorage.edit(key);
             if(null == editor) return null;
-            return new OutputStreamWrapper(editor,editor.newOutputStream());
+            OutputStream outputStream = editor.newOutputStream();
+            if(null == outputStream){
+                editor.abort();
+                editor.close();
+                return null;
+            }
+            return new OutputStreamWrapper(editor,outputStream);
         } catch (IOException e) {
             e.printStackTrace();
             return null;

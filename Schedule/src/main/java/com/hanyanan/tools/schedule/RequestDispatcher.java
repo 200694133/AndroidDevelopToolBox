@@ -72,16 +72,16 @@ public class RequestDispatcher extends Thread{
                 // Perform the network request.
 //                NetworkResponse networkResponse = mNetwork.performRequest(request);
 //                request.addMarker("network-http-complete");
-                CachePolicy cachePolicy = request.getCachePolicy();
+                CachePolicy cacheExecutor = request.getCachePolicy();
                 RequestExecutor re  = request.getRequestExecutor();
                 ResponseDelivery rd = request.getResponseDelivery();
                 if(null == rd) rd = this.mDefaultDelivery;
                 //try get from cache
-                if(cachePolicy!=null && !cachePolicy.skipCache() && cachePolicy.canReadFromCache()){
-                    //TODO
-                    request.addMarker("read-cache-complete");
-                    return;
-                }
+//                if(cacheExecutor !=null && !cacheExecutor.skipCache() && cacheExecutor.canReadFromCache()){
+//                    //TODO
+//                    request.addMarker("read-cache-complete");
+//                    return;
+//                }
 
                 Response response = re.performRequest(request);
                 request.addMarker("request-complete");
@@ -89,11 +89,11 @@ public class RequestDispatcher extends Thread{
                 rd.postResponse(request, response);
                 request.markDelivered();
                 //check if need to insert to cache.
-                if (null != cachePolicy && !cachePolicy.skipCache() && cachePolicy.shouldCache()) {
-                    //mCache.put(cachePolicy.getCacheKey(), response.cacheEntry);
-                    //TODO
-                    request.addMarker("network-cache-written");
-                }
+//                if (null != cacheExecutor && !cacheExecutor.skipCache() && cacheExecutor.shouldCache()) {
+//                    //mCache.put(cachePolicy.getCacheKey(), response.cacheEntry);
+//                    //TODO
+//                    request.addMarker("network-cache-written");
+//                }
             } catch (XError volleyError) {
 //                parseAndDeliverNetworkError(request, volleyError);
                 request.addMarker("Request retry "+volleyError.toString());
