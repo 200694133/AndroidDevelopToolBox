@@ -99,6 +99,8 @@ public class HttpCache {
     }
 
     public BasicHttpResponse put(HttpRequest httpRequest, BasicHttpResponse httpResponse) throws IOException{
+        HttpRequest.HttpProgressListener httpProgressListener = httpRequest.getHttpProgressListener();
+
         Cache.Mode mode = httpRequest.getCacheMode();
         if(mode == Cache.Mode.Disable) return httpResponse;
 
@@ -106,7 +108,7 @@ public class HttpCache {
         StatusLine statusLine = httpResponse.getStatusLine();
         int statusCode = statusLine.getStatusCode();
         final HttpCacheHeader httpCacheHeader = parseCacheHeader(httpResponse);
-        if(null == httpCacheHeader && mode == Cache.Mode.StrictMode){//support cache, should store on data base
+        if(null == httpCacheHeader && mode == Cache.Mode.StrictMode){//cannot cache it.
             return httpResponse;
         }
 
@@ -135,12 +137,16 @@ public class HttpCache {
             res.setContentType(entity.getContentType());
             httpResponse.setEntity(res);
             entity.consumeContent();
+            if(null != httpProgressListener) httpProgressListener.downloadProgress(1.0F);//update download progress
             return httpResponse;
         }
 
         if(statusCode>=200 && statusCode<300) {//cache content to disk cache
             //save to disk cache
-            mDiskStorage.save(key, httpResponse.getEntity().getContent(), httpCacheHeader.ttl + 30 * 1000 * 60 * 60L);
+            mDiskStorage.save(key,  httpResponse.getEntity().getContent(),
+                    new ProgressCopier(httpRequest.getHttpProgressListener()),
+                    httpResponse.getEntity().getContentLength()<=0?Integer.MAX_VALUE:httpResponse.getEntity().getContentLength(),
+                    httpCacheHeader.ttl + 30 * 1000 * 60 * 60L);
             InputStream inputStream = mDiskStorage.getInputStream(key);
             if(null == inputStream) {
                 //TODO，可以设为默认的流
@@ -154,6 +160,8 @@ public class HttpCache {
             res.setContentType(entity.getContentType());
             httpResponse.setEntity(res);
             entity.consumeContent();
+
+            if(null != httpProgressListener) httpProgressListener.downloadProgress(1.0F);//update download progress
             return httpResponse;
         }
 

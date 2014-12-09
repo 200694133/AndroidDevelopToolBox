@@ -13,6 +13,7 @@ import com.hanyanan.tools.schedule.http.cache.HttpCache;
 public class HttpRequest extends Request<HttpRequestParam>{
     private Cache.Mode mCacheMode = Cache.Mode.Disable;
     private HttpCache mHttpCache;
+    protected HttpProgressListener mHttpProgressListener;
     public HttpRequest(RequestQueue requestQueue,
                        RequestExecutor requestExecutor, HttpRequestParam param) {
         super(requestQueue,requestExecutor,param);
@@ -22,6 +23,39 @@ public class HttpRequest extends Request<HttpRequestParam>{
                        RequestExecutor requestExecutor, HttpRequestParam param, Cache.Mode mode) {
         super(requestQueue,requestExecutor,param);
         mCacheMode = mode;
+    }
+
+    public HttpRequest setHttpProgressListener(final HttpProgressListener httpProgressListener){
+        if(null == httpProgressListener) return this;
+        mHttpProgressListener = new HttpProgressListener(){
+            private float prevUp = -1;
+            private float prevDown = -1;
+            public void uploadProgress(final float progress) {
+                if(Math.abs(prevUp - progress) < 0.03) return ;
+
+                getResponseDelivery().postRunnable(HttpRequest.this, new Runnable() {
+                    public void run() {
+                        prevUp = progress;
+                        if(null != httpProgressListener) httpProgressListener.uploadProgress(progress);
+                    }
+                });
+            }
+            public void downloadProgress(final float progress) {
+                if(Math.abs(prevDown - progress) < 0.03) return ;
+
+                getResponseDelivery().postRunnable(HttpRequest.this, new Runnable() {
+                    public void run() {
+                        prevDown = progress;
+                        if(null != httpProgressListener) httpProgressListener.downloadProgress(progress);
+                    }
+                });
+            }
+        };
+        return this;
+    }
+
+    public HttpProgressListener getHttpProgressListener(){
+        return mHttpProgressListener;
     }
 
     public HttpRequest setHttpCache(HttpCache httpCache){
@@ -46,5 +80,11 @@ public class HttpRequest extends Request<HttpRequestParam>{
 
     public String getUrl(){
         return getRequestParam().getUrl();
+    }
+
+    public static interface HttpProgressListener{
+        public void uploadProgress(float progress);
+
+        public void downloadProgress(float progress);
     }
 }

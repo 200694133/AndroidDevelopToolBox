@@ -6,6 +6,7 @@ import com.hanyanan.tools.schedule.Cache;
 import com.hanyanan.tools.schedule.RequestQueue;
 import com.hanyanan.tools.schedule.Response;
 import com.hanyanan.tools.schedule.ResponseDelivery;
+import com.hanyanan.tools.schedule.XLog;
 import com.hanyanan.tools.schedule.http.HttpRequest;
 import com.hanyanan.tools.schedule.http.HttpRequestParam;
 import com.hanyanan.tools.storage.disk.DiskStorage;
@@ -38,6 +39,7 @@ class ImageRequest extends HttpRequest {
         super(requestQueue, S_BITMAP_REQUEST_EXECUTOR,parseHttpRequestParam(url));
         setListener(listener);
         setCacheMode(Cache.Mode.SimpleMode);
+        setHttpProgressListener(progressListener);
     }
 
     public ImageRequest setKey(String key){
@@ -56,4 +58,16 @@ class ImageRequest extends HttpRequest {
         param.setTransactionType(HttpRequestParam.TransactionType.STREAM);
         return param;
     }
+
+    private HttpProgressListener progressListener = new HttpProgressListener() {
+        @Override
+        public void uploadProgress(float progress) {
+            XLog.d("uploadProgress "+progress);
+        }
+
+        @Override
+        public void downloadProgress(float progress) {
+            XLog.d("downloadProgress "+progress);
+        }
+    };
 }

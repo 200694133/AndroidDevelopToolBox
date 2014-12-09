@@ -82,6 +82,20 @@ public interface DiskStorage {
 
     /**
      * Save the current input stream to storage. But notice that it's unsafe, it storage content
+     * without encoding. It's valid before expire time. It must be provide a interface to do the
+     * hard work.
+     * @param key key
+     * @param inputStream the input stream need read and write to storage.
+     * @param expireTime expire time for current entry.
+     * @param copier the copier to copy data from input stream to output stream..
+     * @return true means success, or other wise means failed.
+     * @throws IOException
+     */
+    boolean save(String key, InputStream inputStream, Copier copier, long expireTime) throws IOException;
+
+
+    /**
+     * Save the current input stream to storage. But notice that it's unsafe, it storage content
      * without encoding. It's valid before expire time.
      * @param key key
      * @param inputStream the input stream need read and write to storage.

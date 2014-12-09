@@ -141,6 +141,11 @@ class BasicDiskStorage implements DiskStorage{
     }
 
     @Override
+    public boolean save(String key, InputStream inputStream, Copier copier,long expireTime) throws IOException {
+        return save(key, inputStream, copier, REST_STREAM_SIZE, expireTime);
+    }
+
+    @Override
     public boolean save(String key, Bitmap bitmap, Bitmap.CompressFormat format, int quality) throws IOException {
 
         return save(key,bitmap,format,quality, Long.MAX_VALUE);

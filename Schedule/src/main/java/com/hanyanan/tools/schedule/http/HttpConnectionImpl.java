@@ -1,5 +1,6 @@
 package com.hanyanan.tools.schedule.http;
 
+import android.os.RecoverySystem;
 import android.text.TextUtils;
 import android.webkit.CookieManager;
 
@@ -96,7 +97,7 @@ public class HttpConnectionImpl implements HttpInterface{
         }
     }
     //multipart 用于post模式下上传文件用的
-    public static BasicHttpResponse performMultiPartRequest(HttpRequest request,HttpRequestParam param) throws IOException {
+    public static BasicHttpResponse performMultiPartRequest(final HttpRequest request,HttpRequestParam param) throws IOException {
         String urlPath = param.getUrl();
         {//在get模式下，封装参数到url
             if (param.getMethod() == HttpRequestParam.Method.GET && param.getUrlPramsMaps() != null) {
@@ -151,8 +152,22 @@ public class HttpConnectionImpl implements HttpInterface{
         {//send file to server
             List<HttpRequestParam.UpLoadWrapper> wrappers = param.getUploadWrappers();
             if (null != wrappers) {
+                int count = wrappers.size();
+                int curr = 0;
                 for (HttpRequestParam.UpLoadWrapper w : wrappers) {
-                    sendFile(dos, w);
+                    ++curr;
+                    if(null == request.getHttpProgressListener()){
+                        sendFile(dos, w, null);
+                    }else {
+                        final int cu = curr;
+                        final int co = count;
+                        RunningProgress progressListener = new RunningProgress(){
+                            public void progress(float progress) {
+                                request.getHttpProgressListener().uploadProgress(progress*cu/co);
+                            }
+                        };
+                        sendFile(dos, w, progressListener);
+                    }
                 }
             }
         }
@@ -340,7 +355,8 @@ public class HttpConnectionImpl implements HttpInterface{
         dataOutputStream.write(sb.toString().getBytes());
     }
 
-    private static void sendFile(DataOutputStream dataOutputStream, HttpRequestParam.UpLoadWrapper wrapper) throws IOException {
+    private static void sendFile(DataOutputStream dataOutputStream, HttpRequestParam.UpLoadWrapper wrapper, RunningProgress progress) throws IOException {
+        if(null != progress) progress.progress(0F);
         //write boundary to server
         StringBuffer sb = new StringBuffer();
         sb.append(BOUNDARY);
@@ -363,6 +379,9 @@ public class HttpConnectionImpl implements HttpInterface{
             length = (int)wrapper.contentRangeWrapper.length;
         }
         if(offset > 0) inputStream.skip(offset);
+
+        int lengthMark = length;
+        int readMark = 0;
         while(true){
             int want = length>4098?4098:length;
             length -= want;
@@ -370,8 +389,12 @@ public class HttpConnectionImpl implements HttpInterface{
             if(read <=0) break;
             dataOutputStream.write(bytes,0, read);
             if(length <= 0) break;
+
+            readMark+=read;
+            if(null != progress) progress.progress(readMark/(float)lengthMark);
         }
         dataOutputStream.write(LINE_END.getBytes());
+        if(null != progress) progress.progress(1.0F);
         if(wrapper.autoClose){
             wrapper.inputStream.close();
         }
@@ -561,4 +584,8 @@ public class HttpConnectionImpl implements HttpInterface{
         return this;
     }
 
+
+    public static interface RunningProgress{
+        public void progress(float progress);
+    }
 }

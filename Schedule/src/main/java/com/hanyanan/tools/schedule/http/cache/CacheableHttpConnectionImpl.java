@@ -84,9 +84,11 @@ public class CacheableHttpConnectionImpl extends HttpConnectionImpl {
             }
             BasicHttpResponse  response = super.performSimpleRequest(httpRequest);
             return httpCache.put(httpRequest, response);
+        }else {
+            //no need to cache content ,so it will not call progress listener to call invoke, it user
+            // want to get the progress, please call it force.
+            return super.performSimpleRequest(httpRequest);
         }
-
-        return super.performSimpleRequest(httpRequest);
     }
 
     public BasicHttpResponse performDownLoadRequest(HttpRequest httpRequest)throws  IOException{

@@ -8,7 +8,7 @@ import java.io.OutputStream;
  * Created by hanyanan on 2014/10/22.
  */
 public class DefaultCopier implements DiskStorage.Copier {
-    private static final int DEFAULT_BUFF_SIZE = 16 * 1024;
+    protected static final int DEFAULT_BUFF_SIZE = 16 * 1024;
     @Override
     public void copy(InputStream inputStream, OutputStream outputStream, long length) throws IOException {
         final byte[] bytes = new byte[DEFAULT_BUFF_SIZE];
