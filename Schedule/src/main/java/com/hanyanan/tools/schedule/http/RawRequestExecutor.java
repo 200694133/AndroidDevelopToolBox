@@ -10,10 +10,15 @@ import java.io.IOException;
  * Created by hanyanan on 2014/7/30.
  */
 public class RawRequestExecutor implements RequestExecutor<byte[], HttpRequest> {
+    public final static HttpInterface DEFAULT_HTTP = new HttpConnectionImpl();
     private final HttpInterface mHttpInterface;
     public RawRequestExecutor(HttpInterface network){
         mHttpInterface = network;
     }
+    public RawRequestExecutor(){
+        mHttpInterface = DEFAULT_HTTP;
+    }
+
     @Override
     public Response<byte[]> performRequest(HttpRequest request) throws XError {
         try {

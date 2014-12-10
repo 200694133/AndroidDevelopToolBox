@@ -1,5 +1,7 @@
 package com.hanyanan.tools.schedule.http;
 
+import android.text.TextUtils;
+
 import com.hanyanan.tools.schedule.Cache;
 import com.hanyanan.tools.schedule.HttpCacheExecutor;
 import com.hanyanan.tools.schedule.Request;
@@ -14,6 +16,7 @@ public class HttpRequest extends Request<HttpRequestParam>{
     private Cache.Mode mCacheMode = Cache.Mode.Disable;
     private HttpCache mHttpCache;
     protected HttpProgressListener mHttpProgressListener;
+    private String mKey;
     public HttpRequest(RequestQueue requestQueue,
                        RequestExecutor requestExecutor, HttpRequestParam param) {
         super(requestQueue,requestExecutor,param);
@@ -75,9 +78,14 @@ public class HttpRequest extends Request<HttpRequestParam>{
         return mCacheMode;
     }
     public String getKey(){
+        if(!TextUtils.isEmpty(mKey)) return mKey;
         return String.valueOf(Math.abs(getRequestParam().getUrl().hashCode()));
     }
 
+    public HttpRequest setKey(String key){
+        mKey = key;
+        return this;
+    }
     public String getUrl(){
         return getRequestParam().getUrl();
     }
