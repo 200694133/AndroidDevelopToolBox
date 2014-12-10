@@ -1,7 +1,9 @@
 package com.hanyanan.tools.magicbox.view;
 
+import android.annotation.TargetApi;
 import android.content.Context;
 import android.graphics.Bitmap;
+import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
 import android.text.TextUtils;
@@ -27,6 +29,7 @@ import java.util.HashMap;
 /**
  * Created by hanyanan on 2014/8/12.
  */
+@Deprecated
 public class NetworkImageView extends ImageView implements Response.Listener<Bitmap>{
 //    public static int sDefaultImageId = R.drawable.ic_launcher;
 //    public static int sDefaultFaultId = R.drawable.ic_launcher;
@@ -77,6 +80,7 @@ public class NetworkImageView extends ImageView implements Response.Listener<Bit
         setUrl(url,property,key,Cache.Mode.SimpleMode);
     }
 
+    @TargetApi(Build.VERSION_CODES.HONEYCOMB_MR1)
     public void setUrl(String url,HashMap<String,String> property,String key, Cache.Mode mode){
         MagicUtils.checkThreadState();
 
@@ -97,7 +101,7 @@ public class NetworkImageView extends ImageView implements Response.Listener<Bit
         MagicApplication mApp = MagicApplication.getInstance();
         if(null == mApp) return ;
         LruCache<String, Bitmap> cache = mApp.getBitmapLruCache();
-        Bitmap bitmap = cache.get(mUrl);
+        Bitmap bitmap = cache.get(mUrl);//TODO
         if(null != bitmap) {
             this.setImageBitmap(bitmap);
             return ;
